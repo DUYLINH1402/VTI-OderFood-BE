@@ -5,6 +5,9 @@ import com.foodorder.backend.dto.response.FoodResponse;
 import com.foodorder.backend.service.FoodService;
 import com.foodorder.backend.service.S3Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +20,49 @@ import java.util.List;
 @CrossOrigin("*")
 public class FoodController {
 
+
     @Autowired
     private FoodService foodService;
     @Autowired
     private S3Service s3Service;
+
+    // LẤY DANH SÁCH MÓN MỚI
+    @GetMapping("/new")
+    public ResponseEntity<Page<FoodResponse>> getNewFoods(@PageableDefault(size = 12) Pageable pageable) {
+        return ResponseEntity.ok(foodService.getNewFoods(pageable));
+    }
+
+    // LẤY DANH SÁCH MÓN NGON
+    @GetMapping("/featured")
+    public ResponseEntity<Page<FoodResponse>> getFeaturedFoods(@PageableDefault(size = 12) Pageable pageable) {
+        return ResponseEntity.ok(foodService.getFeaturedFoods(pageable));
+    }
+
+    // LẤY DANH SÁCH MÓN ĐƯỢC ƯA THÍCH
+    @GetMapping("/bestsellers")
+    public ResponseEntity<Page<FoodResponse>> getBestSellerFoods(@PageableDefault(size = 12) Pageable pageable) {
+        return ResponseEntity.ok(foodService.getBestSellerFoods(pageable));
+    }
+    // Lấy danh sách món ăn theo danh mục
+    @GetMapping("/by-category/{categoryId}")
+    public ResponseEntity<Page<FoodResponse>> getFoodsByCategoryId(@PathVariable Long categoryId, @PageableDefault(size = 12) Pageable pageable) {
+        return ResponseEntity.ok(foodService.getFoodsByCategoryId(categoryId, pageable));
+    }
+    // Lấy danh sách món ăn theo danh mục bằng SLUG
+    @GetMapping("/by-category-slug/{slug}")
+    public ResponseEntity<Page<FoodResponse>> getFoodsByCategorySlug(
+            @PathVariable String slug,
+            @PageableDefault(size = 12) Pageable pageable) {
+        return ResponseEntity.ok(foodService.getFoodsByCategorySlug(slug, pageable));
+    }
+
+    // Chi tiết món ăn theo SLUG
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<FoodResponse> getFoodBySlug(@PathVariable String slug) {
+        FoodResponse foodResponse = foodService.getFoodBySlug(slug);
+        return ResponseEntity.ok(foodResponse);
+    }
+
 
     // TẠO MÓN ĂN MỚI
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -48,8 +90,8 @@ public class FoodController {
     }
 
     @GetMapping
-    public ResponseEntity<List<FoodResponse>> getAllFoods() {
-        return ResponseEntity.ok(foodService.getAllFoods());
+    public ResponseEntity<Page<FoodResponse>> getAllFoods(@PageableDefault(size = 12) Pageable pageable) {
+        return ResponseEntity.ok(foodService.getAllFoods(pageable));
     }
 
 //    Upload ảnh món ăn
@@ -66,3 +108,4 @@ public class FoodController {
     }
 
 }
+

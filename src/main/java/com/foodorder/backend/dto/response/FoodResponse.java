@@ -1,6 +1,8 @@
 package com.foodorder.backend.dto.response;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,4 +15,13 @@ public class FoodResponse {
     private Double price;
     private String imageUrl;
     private String categoryName; // Nếu có category
+    private Long categoryId;
+    private Long parentId;
+    private Boolean isBestSeller;
+    private Boolean isNew;
+    private Boolean isFeatured;
+    private String slug;
+    private List<String> images;
+    private List<FoodVariantResponse> variants;
+
 }

@@ -10,7 +10,13 @@ public interface CategoryService {
     CategoryResponse createCategory(CategoryRequest request);
     List<CategoryResponse> getAllCategories();
     CategoryResponse getCategoryById(Long id);
+    CategoryResponse getCategoryBySlug(String slug);
+    List<CategoryResponse> getCategoriesByParentSlug(String slug);
     CategoryResponse updateCategory(Long id, CategoryRequest request);
     void deleteCategory(Long id);
+
+    List<CategoryResponse> getRootCategories();
+
+    List<CategoryResponse> getCategoriesByParentId(Long parentId);
 }
 

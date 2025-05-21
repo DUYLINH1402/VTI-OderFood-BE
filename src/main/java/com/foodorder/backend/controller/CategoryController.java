@@ -25,6 +25,24 @@ public class CategoryController {
         return ResponseEntity.created(URI.create("/api/categories/" + response.getId())).body(response);
     }
 
+    // Lấy danh sách danh mục cha
+    @GetMapping("/roots")
+    public ResponseEntity<List<CategoryResponse>> getRootCategories() {
+        return ResponseEntity.ok(categoryService.getRootCategories());
+    }
+
+    // Lấy danh sách danh mục con
+    @GetMapping("/by-parent/{parentId}")
+    public ResponseEntity<List<CategoryResponse>> getByParentId(@PathVariable Long parentId) {
+        return ResponseEntity.ok(categoryService.getCategoriesByParentId(parentId));
+    }
+    // Lấy danh sách danh mục con bằng slug
+    @GetMapping("/by-parent-slug/{slug}")
+    public ResponseEntity<List<CategoryResponse>> getByParentSlug(@PathVariable String slug) {
+        CategoryResponse parent = categoryService.getCategoryBySlug(slug);
+        return ResponseEntity.ok(categoryService.getCategoriesByParentId(parent.getId()));
+    }
+
     // Lấy danh sách danh mục
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getAllCategories() {
@@ -37,6 +55,11 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
+    // Lấy chi tiết danh mục bằng slug
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<CategoryResponse> getCategoryBySlug(@PathVariable String slug) {
+        return ResponseEntity.ok(categoryService.getCategoryBySlug(slug));
+    }
 
     // Cập nhật danh mục
     @PutMapping("/{id}")

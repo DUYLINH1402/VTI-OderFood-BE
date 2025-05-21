@@ -1,20 +1,38 @@
 package com.foodorder.backend.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<String> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    // Validation DTO: @NotBlank, @Email, ...
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
+        String msg = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(e -> e.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        return new ResponseEntity<>(new ApiError(400, msg), HttpStatus.BAD_REQUEST);
     }
 
+    // Lỗi chung ném ra (RuntimeException)
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiError> handleRuntime(RuntimeException ex) {
+        return new ResponseEntity<>(new ApiError(400, ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
+    // Fallback lỗi không mong muốn (500)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleAllOtherErrors(Exception ex) {
-        ex.printStackTrace(); // bạn có thể log thay vì in ra
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đã xảy ra lỗi hệ thống");
+    public ResponseEntity<ApiError> handleServerError(Exception ex) {
+        ex.printStackTrace(); // in log
+        return new ResponseEntity<>(new ApiError(500, "INTERNAL_SERVER_ERROR"), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -15,4 +15,8 @@ public class FoodRequest {
     private Double price;
     private MultipartFile imageUrl;
     private Long categoryId; // ID của danh mục (nếu có)
+    private Long parentId;
+    private Boolean isBestSeller;
+    private Boolean isNew;
+    private Boolean isFeatured;
 }
