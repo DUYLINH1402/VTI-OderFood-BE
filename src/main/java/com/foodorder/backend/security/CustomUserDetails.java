@@ -31,6 +31,10 @@ public class CustomUserDetails implements UserDetails {
     public String getUsername() {
         return user.getUsername();
     }
+    public Long getId() {
+        return user.getId();
+    }
+
 
     // Những method dưới có thể dùng khi khóa tài khoản
     @Override
@@ -40,7 +44,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return user.getIsActive();
+        return user.isActive();
     }
 
     @Override
@@ -50,7 +54,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return user.getIsActive();
+        return user.isVerified();
     }
 
     public User getUser() {

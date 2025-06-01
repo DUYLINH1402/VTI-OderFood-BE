@@ -6,20 +6,30 @@ import com.foodorder.backend.dto.response.UserResponse;
 import com.foodorder.backend.entity.User;
 import com.foodorder.backend.repository.UserRepository;
 import com.foodorder.backend.security.JwtUtil;
-import com.foodorder.backend.service.UserService;
+import com.foodorder.backend.service.EmailService;
+import com.foodorder.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
-
+public class AuthServiceImpl implements AuthService {
+    @Autowired
     private final UserRepository userRepository;
+    @Autowired
     private final PasswordEncoder passwordEncoder;
-     private final JwtUtil jwtUtil;
+    @Autowired
+    private final JwtUtil jwtUtil;
+    @Autowired
+    private EmailService emailService;
+
+    // Tạo mã xác nhận ngẫu nhiên
+    String token = UUID.randomUUID().toString();
 
     @Override
     public UserResponse registerUser(UserRegisterRequest request) {
@@ -32,16 +42,20 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = User.builder()
-                .username(request.getUsername())  // dùng username thật
+                .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .isActive(true)
                 .isVerified(false)
                 .role("ROLE_USER")
                 .point(0)
+                .verificationToken(token)
                 .build();
 
         userRepository.save(user);
+
+        // Gửi email xác nhận
+        emailService.sendVerificationEmail(user.getEmail(), token);
 
         return UserResponse.builder()
                 .id(user.getId())
@@ -55,23 +69,39 @@ public class UserServiceImpl implements UserService {
     public UserResponse loginUser(UserLoginRequest request) {
         String loginInput = request.getLogin();
 
-        // Xác định login là email hay username
+        // Tìm người dùng theo email hoặc username
         Optional<User> userOpt = loginInput.contains("@")
                 ? userRepository.findByEmail(loginInput)
                 : userRepository.findByUsername(loginInput);
 
         User user = userOpt.orElseThrow(() -> new RuntimeException("USER_NOT_FOUND"));
 
+        // Kiểm tra mật khẩu
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("INVALID_CREDENTIALS");
         }
 
+        // Kiểm tra tài khoản có bị khóa không
+        if (!user.isActive())
+        {
+            throw new RuntimeException("USER_LOCKED");
+        }
+
+        // Kiểm tra xác minh email
+        if (!user.isVerified())
+        {
+            throw new RuntimeException("EMAIL_NOT_VERIFIED");
+        }
+
+        // Sinh JWT
         String token = jwtUtil.generateToken(user);
 
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole())
                 .token(token)
                 .build();

@@ -43,10 +43,10 @@ public class User {
     private String role;
 
     @Column(name = "is_active")
-    private Boolean isActive;
+    private boolean isActive;
 
     @Column(name = "is_verified")
-    private Boolean isVerified;
+    private boolean isVerified;
 
     @Column(name = "verification_token", length = 255)
     private String verificationToken;
@@ -69,8 +69,8 @@ public class User {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
 
-        if (isActive == null) isActive = true;           // Mặc định là hoạt động
-        if (isVerified == null) isVerified = false;      // Chưa xác minh email
+        isActive = true;           // Mặc định là hoạt động
+        isVerified = false;        // Chưa xác minh email
         if (role == null) role = "ROLE_USER";            // Mặc định là người dùng
         if (point == null) point = 0;                    // 0 điểm khi tạo mới
     }

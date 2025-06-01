@@ -5,7 +5,7 @@ import com.foodorder.backend.dto.request.UserRegisterRequest;
 import com.foodorder.backend.dto.response.UserResponse;
 import com.foodorder.backend.entity.User;
 import com.foodorder.backend.security.CustomUserDetails;
-import com.foodorder.backend.service.UserService;
+import com.foodorder.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+    private final AuthService userService;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody @Valid UserRegisterRequest request) {
@@ -51,8 +51,6 @@ public class AuthController {
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole())
                 .build();
-//        System.out.println(">> Auth: " + SecurityContextHolder.getContext().getAuthentication());
-//        System.out.println(">> Principal: " + SecurityContextHolder.getContext().getAuthentication().getPrincipal());
 
         return ResponseEntity.ok(response);
     }

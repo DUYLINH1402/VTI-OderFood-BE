@@ -13,12 +13,12 @@ kill -9 <PID>
 
 
 BƯỚC 4: Chạy bản mới
+
 ec2connect
-nohup java -jar backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local
 
 nohup java -jar backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local > log.txt 2>&1 &
 
 
-(sau khi chạy sẽ có PID mới lưu lại: 263994)
+(sau khi chạy sẽ có PID mới lưu lại: 2366511)
 Xem log: 
 tail -f log.txt
