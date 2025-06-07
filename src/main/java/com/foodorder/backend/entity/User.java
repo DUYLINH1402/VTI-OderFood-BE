@@ -63,6 +63,10 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "verification_token_created_at")
+    private LocalDateTime verificationTokenCreatedAt;
+
+
     // Chạy trước khi INSERT → set giá trị mặc định
     @PrePersist
     protected void onCreate() {

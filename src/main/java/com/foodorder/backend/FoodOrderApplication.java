@@ -7,12 +7,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class FoodOrderApplication {
-	@Value("${spring.profiles.active:default}")
-	private String profile;
+//	@Value("${spring.profiles.active:default}")
+//	private String profile;
 
 	@PostConstruct
 	public void printProfile() {
-		System.out.println(">>> Profile đang chạy: " + profile);
+//		System.out.println(">>> Profile đang chạy: " + profile);
 	}
 
 	public static void main(String[] args) {

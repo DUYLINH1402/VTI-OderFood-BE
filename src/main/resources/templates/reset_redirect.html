@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Đang chuyển hướng...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const token = /*[[${token}]]*/ 'unknown';
+        window.location.href = "https://oder-4c1f2.web.app/reset-password?token=" + token;
+        /*]]>*/
+    </script>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          background-color: #f3f4f6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          text-align: center;
+        }
+        .box {
+          background: white;
+          padding: 30px 40px;
+          border-radius: 8px;
+          box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Đang chuyển hướng...</h2>
+    <p>Vui lòng chờ giây lát. Nếu không được tự chuyển, hãy <a th:href="'https://oder-4c1f2.web.app/reset-password?token=' + ${token}">bấm vào đây</a>.</p>
+</div>
+</body>
+</html>

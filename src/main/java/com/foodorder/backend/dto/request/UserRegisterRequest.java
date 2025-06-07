@@ -1,5 +1,6 @@
 package com.foodorder.backend.dto.request;
 
+import com.foodorder.backend.validation.ValidPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -17,6 +18,7 @@ public class UserRegisterRequest {
     private String email;
 
     @NotBlank(message = "PASSWORD_REQUIRED")
+    @ValidPassword
     private String password;
 
 }

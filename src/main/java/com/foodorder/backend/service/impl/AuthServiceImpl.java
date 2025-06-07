@@ -6,13 +6,14 @@ import com.foodorder.backend.dto.response.UserResponse;
 import com.foodorder.backend.entity.User;
 import com.foodorder.backend.repository.UserRepository;
 import com.foodorder.backend.security.JwtUtil;
-import com.foodorder.backend.service.EmailService;
+import com.foodorder.backend.service.BrevoEmailService;
 import com.foodorder.backend.service.AuthService;
+import com.foodorder.backend.service.ThymeleafTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,13 +27,18 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private final JwtUtil jwtUtil;
     @Autowired
-    private EmailService emailService;
+    private final BrevoEmailService brevoEmailService;
 
-    // Tạo mã xác nhận ngẫu nhiên
-    String token = UUID.randomUUID().toString();
+    @Autowired
+    private final ThymeleafTemplateService thymeleafTemplateService;
+
 
     @Override
     public UserResponse registerUser(UserRegisterRequest request) {
+        // Tạo mã xác nhận ngẫu nhiên
+        String token = UUID.randomUUID().toString();
+
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("USERNAME_ALREADY_EXISTS");
         }
@@ -50,12 +56,18 @@ public class AuthServiceImpl implements AuthService {
                 .role("ROLE_USER")
                 .point(0)
                 .verificationToken(token)
+                .verificationTokenCreatedAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
 
         // Gửi email xác nhận
-        emailService.sendVerificationEmail(user.getEmail(), token);
+        try {
+            String html = thymeleafTemplateService.buildVerificationEmail(user.getFullName(), token);
+            brevoEmailService.sendEmail(user.getEmail(), "Xác nhận tài khoản Dong Xanh", html);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return UserResponse.builder()
                 .id(user.getId())
@@ -64,6 +76,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole())
                 .build();
     }
+
 
     @Override
     public UserResponse loginUser(UserLoginRequest request) {
@@ -96,16 +109,19 @@ public class AuthServiceImpl implements AuthService {
         // Sinh JWT
         String token = jwtUtil.generateToken(user);
 
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .fullName(user.getFullName())
-                .avatarUrl(user.getAvatarUrl())
-                .role(user.getRole())
-                .token(token)
-                .build();
+        //  Cập nhật thời gian đăng nhập
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
+        //  Dùng fromEntity cho đồng bộ
+        UserResponse response = UserResponse.fromEntity(user);
+        response.setToken(token); // Gắn token vào response
+        return response;
+
     }
+
+
+
 
 
 }

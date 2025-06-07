@@ -3,6 +3,7 @@ package com.foodorder.backend.exception;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,4 +36,10 @@ public class GlobalExceptionHandler {
         ex.printStackTrace(); // in log
         return new ResponseEntity<>(new ApiError(500, "INTERNAL_SERVER_ERROR"), HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(TooManyRequestException.class)
+    public ResponseEntity<ApiError> handleTooManyRequests(TooManyRequestException ex) {
+        return new ResponseEntity<>(new ApiError(429, ex.getMessage()), HttpStatus.TOO_MANY_REQUESTS);
+    }
+
 }
