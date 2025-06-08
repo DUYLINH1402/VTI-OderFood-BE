@@ -140,22 +140,24 @@ public class AuthServiceImpl implements AuthService {
 
     // GỬI LẠI EMAIL XÁC MINH
     @Override
-    public void resendVerificationEmail(String email) {
-        User user = userRepository.findByEmail(email)
+    public void resendVerificationEmail(String emailOrUsername) {
+        // Cho phép nhập username hoặc email
+        User user = userRepository.findByEmail(emailOrUsername)
+                .or(() -> userRepository.findByUsername(emailOrUsername))
                 .orElseThrow(() -> new RuntimeException("EMAIL_NOT_FOUND"));
 
         if (user.isVerified()) {
             throw new RuntimeException("EMAIL_ALREADY_VERIFIED");
         }
 
-        // Giới hạn: tối đa 3 token trong 60 phút
+        // Giới hạn gửi lại 3 lần trong 1 giờ
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-        long count = userTokenRepository.countRecentTokens(email, UserTokenType.EMAIL_VERIFICATION, oneHourAgo);
+        long count = userTokenRepository.countRecentTokens(user.getEmail(), UserTokenType.EMAIL_VERIFICATION, oneHourAgo);
         if (count >= 3) {
             throw new RuntimeException("TOO_MANY_REQUESTS_RESEND_VERIFICATION");
         }
 
-        // Vô hiệu hóa token cũ
+        // Vô hiệu hoá token cũ
         userTokenRepository.invalidateAllByUserAndType(user, UserTokenType.EMAIL_VERIFICATION);
 
         // Tạo token mới
@@ -168,7 +170,7 @@ public class AuthServiceImpl implements AuthService {
         newToken.setExpiresAt(LocalDateTime.now().plusHours(24));
         userTokenRepository.save(newToken);
 
-        // Gửi email
+        // Gửi lại email xác minh
         try {
             String name = user.getFullName() != null ? user.getFullName() : user.getUsername();
             String html = thymeleafTemplateService.buildVerificationEmail(name, token);
@@ -177,6 +179,7 @@ public class AuthServiceImpl implements AuthService {
             e.printStackTrace();
         }
     }
+
 
 
 

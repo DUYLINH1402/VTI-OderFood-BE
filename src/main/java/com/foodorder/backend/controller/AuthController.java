@@ -115,12 +115,15 @@ public class AuthController {
 
     }
 
+    // Gửi lại email xác minh
+    // Nếu người dùng đã xác minh email thì không cần gửi lại
+    // nếu chưa xác minh thì gửi lại email xác minh l
     @PostMapping("/resend-verification")
     public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
+        String emailOrUsername = request.get("email");
 
         try {
-            authService.resendVerificationEmail(email);
+            authService.resendVerificationEmail(emailOrUsername);
             return ResponseEntity.ok(Map.of(
                     "status", 200,
                     "message", "Verification email resent successfully"
