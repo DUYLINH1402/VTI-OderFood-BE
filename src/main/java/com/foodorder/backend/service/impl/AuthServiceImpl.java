@@ -4,7 +4,10 @@ import com.foodorder.backend.dto.request.UserLoginRequest;
 import com.foodorder.backend.dto.request.UserRegisterRequest;
 import com.foodorder.backend.dto.response.UserResponse;
 import com.foodorder.backend.entity.User;
+import com.foodorder.backend.entity.UserToken;
+import com.foodorder.backend.entity.UserTokenType;
 import com.foodorder.backend.repository.UserRepository;
+import com.foodorder.backend.repository.UserTokenRepository;
 import com.foodorder.backend.security.JwtUtil;
 import com.foodorder.backend.service.BrevoEmailService;
 import com.foodorder.backend.service.AuthService;
@@ -22,23 +25,25 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
     @Autowired
     private final UserRepository userRepository;
+
     @Autowired
     private final PasswordEncoder passwordEncoder;
+
     @Autowired
     private final JwtUtil jwtUtil;
+
     @Autowired
     private final BrevoEmailService brevoEmailService;
 
     @Autowired
     private final ThymeleafTemplateService thymeleafTemplateService;
 
+    @Autowired
+    private final UserTokenRepository userTokenRepository;
+
 
     @Override
     public UserResponse registerUser(UserRegisterRequest request) {
-        // Tạo mã xác nhận ngẫu nhiên
-        String token = UUID.randomUUID().toString();
-
-
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("USERNAME_ALREADY_EXISTS");
         }
@@ -55,15 +60,27 @@ public class AuthServiceImpl implements AuthService {
                 .isVerified(false)
                 .role("ROLE_USER")
                 .point(0)
-                .verificationToken(token)
-                .verificationTokenCreatedAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
 
-        // Gửi email xác nhận
+        // Invalidate old tokens
+        userTokenRepository.invalidateAllByUserAndType(user, UserTokenType.EMAIL_VERIFICATION);
+
+        // Create new token
+        String token = UUID.randomUUID().toString();
+        UserToken userToken = new UserToken();
+        userToken.setUser(user);
+        userToken.setToken(token);
+        userToken.setType(UserTokenType.EMAIL_VERIFICATION);
+        userToken.setCreatedAt(LocalDateTime.now());
+        userToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        userTokenRepository.save(userToken);
+
+        // Send email
         try {
-            String html = thymeleafTemplateService.buildVerificationEmail(user.getFullName(), token);
+            String name = user.getFullName() != null ? user.getFullName() : user.getUsername();
+            String html = thymeleafTemplateService.buildVerificationEmail(name, token);
             brevoEmailService.sendEmail(user.getEmail(), "Xác nhận tài khoản Dong Xanh", html);
         } catch (Exception e) {
             e.printStackTrace();
@@ -76,6 +93,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole())
                 .build();
     }
+
 
 
     @Override
@@ -118,6 +136,46 @@ public class AuthServiceImpl implements AuthService {
         response.setToken(token); // Gắn token vào response
         return response;
 
+    }
+
+    // GỬI LẠI EMAIL XÁC MINH
+    @Override
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("EMAIL_NOT_FOUND"));
+
+        if (user.isVerified()) {
+            throw new RuntimeException("EMAIL_ALREADY_VERIFIED");
+        }
+
+        // Giới hạn: tối đa 3 token trong 60 phút
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        long count = userTokenRepository.countRecentTokens(email, UserTokenType.EMAIL_VERIFICATION, oneHourAgo);
+        if (count >= 3) {
+            throw new RuntimeException("TOO_MANY_REQUESTS_RESEND_VERIFICATION");
+        }
+
+        // Vô hiệu hóa token cũ
+        userTokenRepository.invalidateAllByUserAndType(user, UserTokenType.EMAIL_VERIFICATION);
+
+        // Tạo token mới
+        String token = UUID.randomUUID().toString();
+        UserToken newToken = new UserToken();
+        newToken.setUser(user);
+        newToken.setToken(token);
+        newToken.setType(UserTokenType.EMAIL_VERIFICATION);
+        newToken.setCreatedAt(LocalDateTime.now());
+        newToken.setExpiresAt(LocalDateTime.now().plusHours(24));
+        userTokenRepository.save(newToken);
+
+        // Gửi email
+        try {
+            String name = user.getFullName() != null ? user.getFullName() : user.getUsername();
+            String html = thymeleafTemplateService.buildVerificationEmail(name, token);
+            brevoEmailService.sendEmail(user.getEmail(), "Xác nhận lại tài khoản Dong Xanh", html);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 

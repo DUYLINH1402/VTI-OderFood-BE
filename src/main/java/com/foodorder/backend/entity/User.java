@@ -48,9 +48,6 @@ public class User {
     @Column(name = "is_verified")
     private boolean isVerified;
 
-    @Column(name = "verification_token", length = 255)
-    private String verificationToken;
-
     @Column(name = "point")
     private Integer point;
 
@@ -62,9 +59,6 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @Column(name = "verification_token_created_at")
-    private LocalDateTime verificationTokenCreatedAt;
 
 
     // Chạy trước khi INSERT → set giá trị mặc định

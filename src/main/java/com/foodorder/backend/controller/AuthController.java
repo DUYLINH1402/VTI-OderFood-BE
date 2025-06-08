@@ -1,11 +1,11 @@
 package com.foodorder.backend.controller;
 
 import com.foodorder.backend.dto.request.*;
+import com.foodorder.backend.dto.request.ForgotPasswordRequest;
 import com.foodorder.backend.dto.response.UserResponse;
-import com.foodorder.backend.entity.PasswordResetToken;
-import com.foodorder.backend.entity.User;
-import com.foodorder.backend.repository.PasswordResetTokenRepository;
+import com.foodorder.backend.entity.*;
 import com.foodorder.backend.repository.UserRepository;
+import com.foodorder.backend.repository.UserTokenRepository;
 import com.foodorder.backend.service.AuthService;
 import com.foodorder.backend.service.UserService;
 import jakarta.validation.Valid;
@@ -33,11 +33,11 @@ public class AuthController {
     @Autowired
     private  UserRepository userRepository;
 
-    @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
-
     @Value("${app.frontend.reset-password-url}")
     private String resetPasswordRedirectUrl;
+
+    @Autowired
+    private UserTokenRepository userTokenRepository;
 
 
     @PostMapping("/register")
@@ -61,24 +61,31 @@ public class AuthController {
 
     @GetMapping("/verify")
     public String verifyUser(@RequestParam("token") String token) {
-        Optional<User> userOpt = userRepository.findByVerificationToken(token);
-        if (userOpt.isEmpty()) {
-            return "verify_failed"; // template HTML
-        }
-
-        User user = userOpt.get();
-
-        // Kiểm tra hết hạn sau 24 giờ
-        if (user.getVerificationTokenCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
+        Optional<UserToken> tokenOpt = userTokenRepository.findByTokenAndUsedFalseAndType(token, UserTokenType.EMAIL_VERIFICATION);
+        if (tokenOpt.isEmpty()) {
             return "verify_failed";
         }
+
+        UserToken userToken = tokenOpt.get();
+
+        // Kiểm tra hết hạn (dùng createdAt hoặc expiresAt đều được, em dùng createdAt như logic cũ)
+        if (userToken.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
+            return "verify_failed";
+        }
+
+        // Đánh dấu token đã dùng
+        userToken.setUsed(true);
+        userTokenRepository.save(userToken);
+
+        // Cập nhật user
+        User user = userToken.getUser();
         user.setVerified(true);
-        user.setVerificationToken(null);
-        user.setVerificationTokenCreatedAt(null);
         userRepository.save(user);
 
-        return "verify_success"; // template HTML
+        return "verify_success";
     }
+
+
 
 
     @PostMapping("/forgot-password")
@@ -95,12 +102,12 @@ public class AuthController {
 
     @GetMapping("/reset-password/verify")
     public String verifyResetPassword(@RequestParam("token") String token, Model model) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElse(null);
+        Optional<UserToken> tokenOpt = userTokenRepository
+                .findByTokenAndUsedFalseAndType(token, UserTokenType.PASSWORD_RESET);
 
-        if (resetToken == null || resetToken.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
+        if (tokenOpt.isEmpty() || tokenOpt.get().getCreatedAt().isBefore(LocalDateTime.now().minusHours(1))) {
             return "verify_failed";
-        } // Kiểm tra token có hợp lệ và chưa hết hạn
+        }
 
         model.addAttribute("token", token);
         return "reset_redirect"; // Trả về template trung gian để kiểm tra Token xem có hợp lệ không rồi chuyển tiêsp đến
@@ -108,6 +115,23 @@ public class AuthController {
 
     }
 
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        try {
+            authService.resendVerificationEmail(email);
+            return ResponseEntity.ok(Map.of(
+                    "status", 200,
+                    "message", "Verification email resent successfully"
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", 400,
+                    "message", e.getMessage()
+            ));
+        }
+    }
 
 
 }

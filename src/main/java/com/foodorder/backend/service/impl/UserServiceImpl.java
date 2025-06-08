@@ -3,17 +3,11 @@ package com.foodorder.backend.service.impl;
 import com.foodorder.backend.dto.request.ChangePasswordRequest;
 import com.foodorder.backend.dto.request.UserUpdateRequest;
 import com.foodorder.backend.dto.response.UserResponse;
-import com.foodorder.backend.entity.ChangePasswordAttempt;
-import com.foodorder.backend.entity.ForgotPasswordRequest;
-import com.foodorder.backend.entity.PasswordResetToken;
-import com.foodorder.backend.entity.User;
+import com.foodorder.backend.entity.*;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
 import com.foodorder.backend.exception.TooManyRequestException;
-import com.foodorder.backend.repository.ChangePasswordAttemptRepository;
-import com.foodorder.backend.repository.ForgotPasswordRequestRepository;
-import com.foodorder.backend.repository.PasswordResetTokenRepository;
-import com.foodorder.backend.repository.UserRepository;
+import com.foodorder.backend.repository.*;
 import com.foodorder.backend.service.BrevoEmailService;
 import com.foodorder.backend.service.S3Service;
 import com.foodorder.backend.service.UserService;
@@ -41,7 +35,8 @@ public class UserServiceImpl implements UserService {
     private final S3Service s3Service;
 
     @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
+//    private PasswordResetTokenRepository passwordResetTokenRepository;
+    private final UserTokenRepository userTokenRepository;
 
     @Autowired
     private final PasswordEncoder passwordEncoder;
@@ -113,7 +108,6 @@ public class UserServiceImpl implements UserService {
     // Phương thức này sẽ gửi email đặt lại mật khẩu
     @Override
     public void initiatePasswordReset(String email) {
-        // Kiểm tra email có tồn tại trong hệ thống không
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("EMAIL_NOT_FOUND"));
 
@@ -124,13 +118,18 @@ public class UserServiceImpl implements UserService {
             throw new TooManyRequestException("TOO_MANY_REQUESTS_RESET_PASSWORD");
         }
 
-        // Xoá token cũ (nếu có)
-        passwordResetTokenRepository.deleteByUser(user);
+        // Vô hiệu hoá token cũ
+        userTokenRepository.invalidateAllByUserAndType(user, UserTokenType.PASSWORD_RESET);
 
         // Tạo token mới
         String token = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = new PasswordResetToken(token, user);
-        passwordResetTokenRepository.save(resetToken);
+        UserToken resetToken = new UserToken();
+        resetToken.setUser(user);
+        resetToken.setToken(token);
+        resetToken.setType(UserTokenType.PASSWORD_RESET);
+        resetToken.setCreatedAt(LocalDateTime.now());
+        resetToken.setExpiresAt(LocalDateTime.now().plusHours(1));
+        userTokenRepository.save(resetToken);
 
         // Tạo nội dung mail
         String link = resetPasswordUrl + token;
@@ -139,33 +138,33 @@ public class UserServiceImpl implements UserService {
         context.setVariable("userEmail", user.getEmail());
         String htmlContent = templateEngine.process("reset_password_email.html", context);
 
-        // Gửi mail
         brevoEmailService.sendEmail(user.getEmail(), "Đặt lại mật khẩu", htmlContent);
 
-        // Ghi log vào bảng forgot_password_requests
+        // Ghi log
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null) ip = request.getRemoteAddr();
-
         ForgotPasswordRequest log = new ForgotPasswordRequest();
         log.setEmail(email);
         log.setIpAddress(ip);
         forgotPasswordRequestRepository.save(log);
-
     }
 
     @Override
     public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+        UserToken resetToken = userTokenRepository
+                .findByTokenAndUsedFalseAndType(token, UserTokenType.PASSWORD_RESET)
                 .orElseThrow(() -> new ResourceNotFoundException("INVALID_TOKEN"));
 
-        if (resetToken.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
+        if (resetToken.getCreatedAt().isBefore(LocalDateTime.now().minusHours(1))) {
             throw new BadRequestException("TOKEN_EXPIRED");
         }
 
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        passwordResetTokenRepository.delete(resetToken);
+
+        resetToken.setUsed(true);
+        userTokenRepository.save(resetToken);
     }
 
     @Override

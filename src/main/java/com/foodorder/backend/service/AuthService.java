@@ -10,5 +10,6 @@ import com.foodorder.backend.entity.User;
 public interface AuthService {
     UserResponse registerUser(UserRegisterRequest request);
     UserResponse loginUser(UserLoginRequest request);
+    void resendVerificationEmail(String email);
 
 }

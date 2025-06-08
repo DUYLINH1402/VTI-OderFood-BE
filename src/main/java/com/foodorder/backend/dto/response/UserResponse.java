@@ -36,7 +36,6 @@ public class UserResponse {
                 .phoneNumber(user.getPhoneNumber())
                 .avatarUrl(user.getAvatarUrl())
                 .address(user.getAddress())
-                .token(user.getVerificationToken())
                 .role(user.getRole())
                 .isActive(user.isActive())
                 .isVerified(user.isVerified())
