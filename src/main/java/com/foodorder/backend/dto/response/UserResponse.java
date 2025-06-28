@@ -26,7 +26,7 @@ public class UserResponse {
     private LocalDateTime lastLogin;
     private LocalDateTime updatedAt;
 
-    //  Method tiện dụng
+    // Method tiện dụng
     public static UserResponse fromEntity(User user) {
         return UserResponse.builder()
                 .id(user.getId())
