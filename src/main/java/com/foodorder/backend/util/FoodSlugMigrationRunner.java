@@ -1,9 +1,8 @@
 package com.foodorder.backend.util;
 
-import com.foodorder.backend.entity.Food;
-import com.foodorder.backend.repository.FoodRepository;
+import com.foodorder.backend.food.entity.Food;
+import com.foodorder.backend.food.repository.FoodRepository;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.text.Normalizer;

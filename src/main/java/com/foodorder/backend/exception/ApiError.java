@@ -11,4 +11,9 @@ import org.springframework.http.HttpStatus;
 public class ApiError {
     private int status;
     private String message;
+    private String errorCode;
+    private Object errors; // Có thể là Map (field error), hoặc null
+
+
 }
+

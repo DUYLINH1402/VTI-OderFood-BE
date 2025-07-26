@@ -19,6 +19,23 @@ ec2connect
 nohup java -jar backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=local > log.txt 2>&1 &
 
 
-(sau khi chạy sẽ có PID mới lưu lại: 2366511)
 Xem log: 
 tail -f log.txt
+
+-------------------------
+THÊM BIẾN MÔI TRƯỜNG:
+1. Mở file cấu hình:
+nano ~/.bash_profile
+
+2. Dán vào cuối file.
+
+3. Lưu và thoát.
+
+4. Nạp lại cấu hình:
+source ~/.bash_profile
+
+5.Kiểm tra lại:
+VD: echo $ZALOPAY_APP_ID
+    echo $ZALOPAY_KEY1
+    echo $ZALOPAY_KEY2
+

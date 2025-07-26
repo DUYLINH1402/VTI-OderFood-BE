@@ -14,23 +14,22 @@ spring:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION}
 
-  mail:
-    host: email-smtp.us-east-1.amazonaws.com
-    port: 587
-    username: ${YOUR_SMTP_USERNAME}
-    password: ${YOUR_SMTP_PASSWORD}
-    protocol: smtp
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
+  #  mail:
+  #    host: email-smtp.us-east-1.amazonaws.com
+  #    port: 587
+  #    username: ${YOUR_SMTP_USERNAME}
+  #    password: ${YOUR_SMTP_PASSWORD}
+  #    protocol: smtp
+  #    properties:
+  #      mail:
+  #        smtp:
+  #          auth: true
+  #          starttls:
+  #            enable: true
 
   jpa:
     hibernate:
-      ddl-auto: update  # hoặc validate
+      ddl-auto: update # hoặc validate
     show-sql: false
     properties:
       hibernate:
@@ -48,7 +47,6 @@ aws:
   s3:
     bucket-name: foodorder-images
 
-
 brevo:
   api-key: ${BREVO_API_KEY}
   sender-email: ${BREVO_SENDER_EMAIL}
@@ -56,6 +54,13 @@ brevo:
 app:
   frontend:
     reset-password-url: ${RESET_PASSWORD_URL}
+
+zalopay:
+  app-id: ${ZALOPAY_APP_ID}
+  key1: ${ZALOPAY_KEY1}
+  key2: ${ZALOPAY_KEY2}
+  endpoint: https://sb-openapi.zalopay.vn/v2/create
+  callback-url:  https://a8f0af140be2.ngrok-free.app/api/payments/zalopay/callback-flexible
 
 logging:
   level:

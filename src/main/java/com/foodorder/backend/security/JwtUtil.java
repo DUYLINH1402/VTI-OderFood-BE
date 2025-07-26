@@ -1,10 +1,11 @@
 package com.foodorder.backend.security;
 
-import com.foodorder.backend.entity.User;
+import com.foodorder.backend.security.exception.JwtTokenExpiredException;
+import com.foodorder.backend.security.exception.JwtTokenInvalidException;
+import com.foodorder.backend.user.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,7 @@ public class JwtUtil {
 
     @Value("${jwt.expiration}")
     private long EXPIRATION_MS;
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
@@ -43,16 +45,26 @@ public class JwtUtil {
         try {
             parseClaims(token);
             return true;
-        } catch (Exception e) {
-            return false;
+        } catch (ExpiredJwtException e) {
+            throw new JwtTokenExpiredException("JWT_TOKEN_EXPIRED");
+        } catch (UnsupportedJwtException | MalformedJwtException | io.jsonwebtoken.security.SignatureException
+                | IllegalArgumentException e) {
+            throw new JwtTokenInvalidException("JWT_TOKEN_INVALID");
         }
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            throw new JwtTokenExpiredException("JWT_TOKEN_EXPIRED");
+        } catch (UnsupportedJwtException | MalformedJwtException | io.jsonwebtoken.security.SignatureException
+                | IllegalArgumentException e) {
+            throw new JwtTokenInvalidException("JWT_TOKEN_INVALID");
+        }
     }
 }

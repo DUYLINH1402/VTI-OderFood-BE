@@ -2,7 +2,7 @@
 // ĐỂ CUNG CẤP THÔNG TIN CHO SPRING SECURITY KHI XÁC THỰC NGƯỜI DÙNG
 package com.foodorder.backend.security;
 
-import com.foodorder.backend.entity.User;
+import com.foodorder.backend.user.entity.User;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

@@ -2,8 +2,8 @@
 
 package com.foodorder.backend.security;
 
-import com.foodorder.backend.entity.User;
-import com.foodorder.backend.repository.UserRepository;
+import com.foodorder.backend.user.entity.User;
+import com.foodorder.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

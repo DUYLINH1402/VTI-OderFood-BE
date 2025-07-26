@@ -2,10 +2,9 @@
 
 package com.foodorder.backend.util;
 
-import com.foodorder.backend.entity.Category;
-import com.foodorder.backend.repository.CategoryRepository;
+import com.foodorder.backend.category.entity.Category;
+import com.foodorder.backend.category.repository.CategoryRepository;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.text.Normalizer;

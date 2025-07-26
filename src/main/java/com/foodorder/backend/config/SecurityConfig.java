@@ -5,6 +5,7 @@ import com.foodorder.backend.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -26,7 +27,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {}) // hoặc .cors(Customizer.withDefaults())
+                .cors(cors -> {
+                }) // hoặc .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -36,21 +38,27 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/combos/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/api/districts/**", "/api/wards/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+                        .requestMatchers("/api/payments/**").permitAll()
 
                         // Protected endpoints (yêu cầu JWT)
+                        .requestMatchers("/api/orders/**").authenticated()
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/cart/**").authenticated()
-                        .requestMatchers("/api/orders/**").authenticated()
-                        .requestMatchers("/api/reviews/**").authenticated()
+
+                        // FEEDBACKS
+                        .requestMatchers(HttpMethod.GET, "/api/feedback-media/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/feedback-media/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/feedback-media/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/feedback-media/**").hasRole("ADMIN")
 
                         // Các endpoint khác (nếu có) mặc định phải xác thực
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
