@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
     private final S3Service s3Service;
 
     @Autowired
-//    private PasswordResetTokenRepository passwordResetTokenRepository;
+    // private PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserTokenRepository userTokenRepository;
 
     @Autowired
@@ -66,11 +66,11 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private ChangePasswordAttemptRepository changePasswordAttemptRepository;
 
-
     @Override
     public User save(User user) {
         return userRepository.save(user);
     }
+
     @Override
     public UserResponse updateProfile(User user, UserUpdateRequest request) {
         user.setFullName(request.getFullName());
@@ -149,7 +149,8 @@ public class UserServiceImpl implements UserService {
 
         // Ghi log
         String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null) ip = request.getRemoteAddr();
+        if (ip == null)
+            ip = request.getRemoteAddr();
         ForgotPasswordRequest log = new ForgotPasswordRequest();
         log.setEmail(email);
         log.setIpAddress(ip);
@@ -163,7 +164,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("INVALID_TOKEN"));
 
         if (resetToken.getCreatedAt().isBefore(LocalDateTime.now().minusHours(1))) {
-            throw new BadRequestException("TOKEN_EXPIRED");
+            throw new BadRequestException("Token expired", "TOKEN_EXPIRED");
         }
 
         User user = resetToken.getUser();
@@ -188,7 +189,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (!passwordEncoder.matches(changeRequest.getCurrentPassword(), user.getPassword())) {
-            throw new BadRequestException("INVALID_CURRENT_PASSWORD");
+            throw new BadRequestException("Invalid current password", "INVALID_CURRENT_PASSWORD");
         }
 
         user.setPassword(passwordEncoder.encode(changeRequest.getNewPassword()));
@@ -196,14 +197,13 @@ public class UserServiceImpl implements UserService {
 
         // Lưu log đổi mật khẩu
         String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null) ip = request.getRemoteAddr();
+        if (ip == null)
+            ip = request.getRemoteAddr();
 
         ChangePasswordAttempt attempt = new ChangePasswordAttempt();
         attempt.setUserId(userId);
         attempt.setIpAddress(ip);
         changePasswordAttemptRepository.save(attempt);
     }
-
-
 
 }

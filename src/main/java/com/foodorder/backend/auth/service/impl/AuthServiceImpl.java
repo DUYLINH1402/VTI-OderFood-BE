@@ -1,6 +1,7 @@
 package com.foodorder.backend.auth.service.impl;
 
 import com.foodorder.backend.auth.dto.request.UserLoginRequest;
+import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.auth.dto.request.UserRegisterRequest;
 import com.foodorder.backend.user.dto.response.UserResponse;
 import com.foodorder.backend.user.entity.User;
@@ -12,6 +13,10 @@ import com.foodorder.backend.security.JwtUtil;
 import com.foodorder.backend.service.BrevoEmailService;
 import com.foodorder.backend.auth.service.AuthService;
 import com.foodorder.backend.service.ThymeleafTemplateService;
+import com.foodorder.backend.points.entity.RewardPoint;
+import com.foodorder.backend.points.entity.PointHistory;
+import com.foodorder.backend.points.entity.PointType;
+import com.foodorder.backend.points.repository.RewardPointRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +28,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+    @Autowired
+    private final com.foodorder.backend.points.repository.PointHistoryRepository pointHistoryRepository;
     @Autowired
     private final UserRepository userRepository;
 
@@ -41,15 +48,17 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private final UserTokenRepository userTokenRepository;
 
+    @Autowired
+    private final RewardPointRepository rewardPointRepository;
 
     @Override
     public UserResponse registerUser(UserRegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("USERNAME_ALREADY_EXISTS");
+            throw new BadRequestException("Username already exists", "USERNAME_ALREADY_EXISTS");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("EMAIL_ALREADY_EXISTS");
+            throw new BadRequestException("Email already exists", "EMAIL_ALREADY_EXISTS");
         }
 
         User user = User.builder()
@@ -59,10 +68,29 @@ public class AuthServiceImpl implements AuthService {
                 .isActive(true)
                 .isVerified(false)
                 .role("ROLE_USER")
-                .point(0)
                 .build();
 
         userRepository.save(user);
+
+        // Tạo RewardPoint cho user mới với balance = 10000
+        RewardPoint rewardPoint = RewardPoint.builder()
+                .user(user)
+                .balance(10000)
+                .lastUpdated(LocalDateTime.now())
+                .build();
+        rewardPointRepository.save(rewardPoint);
+
+        // Lưu log vào point_history khi tạo RewardPoint cho user mới
+        PointHistory pointHistory = PointHistory
+                .builder()
+                .userId(user.getId())
+                .type(PointType.EARN)
+                .amount(10000)
+                .orderId(null)
+                .description("Tặng điểm khi đăng ký")
+                .createdAt(LocalDateTime.now())
+                .build();
+        pointHistoryRepository.save(pointHistory);
 
         // Invalidate old tokens
         userTokenRepository.invalidateAllByUserAndType(user, UserTokenType.EMAIL_VERIFICATION);
@@ -91,10 +119,12 @@ public class AuthServiceImpl implements AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .token(null)
+                .point(rewardPoint.getBalance())
+                .isActive(user.isActive())
+                .isVerified(user.isVerified())
                 .build();
     }
-
-
 
     @Override
     public UserResponse loginUser(UserLoginRequest request) {
@@ -105,33 +135,31 @@ public class AuthServiceImpl implements AuthService {
                 ? userRepository.findByEmail(loginInput)
                 : userRepository.findByUsername(loginInput);
 
-        User user = userOpt.orElseThrow(() -> new RuntimeException("USER_NOT_FOUND"));
+        User user = userOpt.orElseThrow(() -> new BadRequestException("Account not found", "USER_NOT_FOUND"));
 
         // Kiểm tra mật khẩu
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("INVALID_CREDENTIALS");
+            throw new BadRequestException("Invalid password", "INVALID_CREDENTIALS");
         }
 
         // Kiểm tra tài khoản có bị khóa không
-        if (!user.isActive())
-        {
-            throw new RuntimeException("USER_LOCKED");
+        if (!user.isActive()) {
+            throw new BadRequestException("Account is locked", "USER_LOCKED");
         }
 
         // Kiểm tra xác minh email
-        if (!user.isVerified())
-        {
-            throw new RuntimeException("EMAIL_NOT_VERIFIED");
+        if (!user.isVerified()) {
+            throw new BadRequestException("Email not verified", "EMAIL_NOT_VERIFIED");
         }
 
         // Sinh JWT
         String token = jwtUtil.generateToken(user);
 
-        //  Cập nhật thời gian đăng nhập
+        // Cập nhật thời gian đăng nhập
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
 
-        //  Dùng fromEntity cho đồng bộ
+        // Dùng fromEntity cho đồng bộ
         UserResponse response = UserResponse.fromEntity(user);
         response.setToken(token); // Gắn token vào response
         return response;
@@ -144,17 +172,19 @@ public class AuthServiceImpl implements AuthService {
         // Cho phép nhập username hoặc email
         User user = userRepository.findByEmail(emailOrUsername)
                 .or(() -> userRepository.findByUsername(emailOrUsername))
-                .orElseThrow(() -> new RuntimeException("EMAIL_NOT_FOUND"));
+                .orElseThrow(() -> new BadRequestException("Email not found", "EMAIL_NOT_FOUND"));
 
         if (user.isVerified()) {
-            throw new RuntimeException("EMAIL_ALREADY_VERIFIED");
+            throw new BadRequestException("Email already verified", "EMAIL_ALREADY_VERIFIED");
         }
 
         // Giới hạn gửi lại 3 lần trong 1 giờ
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-        long count = userTokenRepository.countRecentTokens(user.getEmail(), UserTokenType.EMAIL_VERIFICATION, oneHourAgo);
+        long count = userTokenRepository.countRecentTokens(user.getEmail(), UserTokenType.EMAIL_VERIFICATION,
+                oneHourAgo);
         if (count >= 3) {
-            throw new RuntimeException("TOO_MANY_REQUESTS_RESEND_VERIFICATION");
+            throw new BadRequestException("Too many requests to resend verification email",
+                    "TOO_MANY_REQUESTS_RESEND_VERIFICATION");
         }
 
         // Vô hiệu hoá token cũ
@@ -179,10 +209,5 @@ public class AuthServiceImpl implements AuthService {
             e.printStackTrace();
         }
     }
-
-
-
-
-
 
 }

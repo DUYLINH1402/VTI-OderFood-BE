@@ -18,6 +18,24 @@ Luôn phản hồi cho người dùng bằng Tiếng Việt trong mọi tình hu
 ## Quy tắc code Backend (chi tiết từ toàn bộ dự án)
 
 - Kiến trúc chuẩn Spring Boot: Tách rõ Controller, Service, Repository, Entity, DTO cho từng module (auth, cart, food, order, user, payments, zone, feedbacks, favorite...).
+
+Khi viết code, luôn chia rõ ràng các lớp theo kiến trúc Spring Boot:
+
+- Controller: Xử lý request/response, định nghĩa endpoint, không chứa logic nghiệp vụ.
+- Service: Chứa logic nghiệp vụ, xử lý dữ liệu, gọi repository, tách riêng cho từng module. Nên chia thành interface (Service) và lớp triển khai (ServiceImpl) để dễ mở rộng, test và quản lý nghiệp vụ phức tạp.
+- Repository: Tương tác với database, chỉ chứa các phương thức truy vấn dữ liệu.
+- Entity: Định nghĩa cấu trúc bảng dữ liệu, ánh xạ với DB.
+- DTO: Định nghĩa dữ liệu truyền qua API, tách biệt với entity để bảo mật và dễ mở rộng.
+
+Ví dụ:
+
+- `FoodController` chỉ nhận request, trả response, gọi tới `FoodService`.
+- `FoodService` là interface định nghĩa các nghiệp vụ, còn `FoodServiceImpl` triển khai chi tiết nghiệp vụ, gọi `FoodRepository`.
+- `FoodRepository` thực hiện truy vấn DB cho entity `Food`.
+- `FoodDTO` dùng cho request/response, không dùng trực tiếp entity.
+
+Luôn comment rõ ràng ở các hàm xử lý nghiệp vụ hoặc logic phức tạp để dễ bảo trì và review code.
+
 - Sử dụng annotation: @RestController, @Service, @Repository, @Entity, @RequestMapping, @Valid, @Autowired, @CrossOrigin, @Builder, @Getter, @Setter, @NoArgsConstructor, @AllArgsConstructor, @PreAuthorize...
 - Quản lý lỗi tập trung: Dùng GlobalExceptionHandler để xử lý và trả về lỗi chuẩn hóa (ApiError, BadRequestException, ResourceNotFoundException...).
 - Đặt tên endpoint rõ ràng, tuân thủ RESTful: Ví dụ `/api/foods/new`, `/api/cart`, `/api/order`, `/api/user`, `/api/payments`.

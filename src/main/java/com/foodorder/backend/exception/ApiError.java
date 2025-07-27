@@ -14,6 +14,4 @@ public class ApiError {
     private String errorCode;
     private Object errors; // Có thể là Map (field error), hoặc null
 
-
 }
-

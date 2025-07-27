@@ -73,7 +73,6 @@ public class OrderController {
             @RequestParam(required = false) Long userId, // Thêm param này để test
             HttpServletRequest request) {
 
-        log.info("Getting orders with status: {}, page: {}, size: {}", status, page, size);
 
         // Lấy userId từ token hoặc từ param (để test)
         Long actualUserId = userId != null ? userId : getUserIdFromToken(request);

@@ -28,6 +28,7 @@ public class UserResponse {
 
     // Method tiện dụng
     public static UserResponse fromEntity(User user) {
+        Integer balance = (user.getRewardPoint() != null) ? user.getRewardPoint().getBalance() : 0;
         return UserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
@@ -39,7 +40,7 @@ public class UserResponse {
                 .role(user.getRole())
                 .isActive(user.isActive())
                 .isVerified(user.isVerified())
-                .point(user.getPoint())
+                .point(balance)
                 .lastLogin(user.getLastLogin())
                 .updatedAt(user.getUpdatedAt())
                 .build();

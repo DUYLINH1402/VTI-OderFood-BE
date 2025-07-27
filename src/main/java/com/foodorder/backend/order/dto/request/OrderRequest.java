@@ -21,6 +21,16 @@ public class OrderRequest {
     private PaymentMethod paymentMethod; // Enum
     private DeliveryType deliveryType;
     private BigDecimal totalPrice;
+    private Integer discountAmount;
+
+    public Integer getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(Integer discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
     private Long districtId;
     private Long wardId;
     private List<OrderItemRequest> items;

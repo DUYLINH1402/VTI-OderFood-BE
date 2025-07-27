@@ -1,5 +1,6 @@
 package com.foodorder.backend.user.entity;
 
+import com.foodorder.backend.points.entity.RewardPoint;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -48,8 +49,8 @@ public class User {
     @Column(name = "is_verified")
     private boolean isVerified;
 
-    @Column(name = "point")
-    private Integer point;
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private RewardPoint rewardPoint;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
@@ -60,17 +61,16 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-
     // Chạy trước khi INSERT → set giá trị mặc định
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
 
-        isActive = true;           // Mặc định là hoạt động
-        isVerified = false;        // Chưa xác minh email
-        if (role == null) role = "ROLE_USER";            // Mặc định là người dùng
-        if (point == null) point = 0;                    // 0 điểm khi tạo mới
+        isActive = true; // Mặc định là hoạt động
+        isVerified = false; // Chưa xác minh email
+        if (role == null)
+            role = "ROLE_USER"; // Mặc định là người dùng
     }
 
     // Chạy trước khi UPDATE → cập nhật updatedAt

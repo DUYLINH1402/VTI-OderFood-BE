@@ -15,5 +15,6 @@ public class OrderItemResponse {
     private String foodSlug;
     private Integer quantity;
     private BigDecimal price;
+    private String priceFormatted;
+    private String totalFormatted;
 }
-

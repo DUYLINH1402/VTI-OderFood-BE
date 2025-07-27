@@ -3,8 +3,7 @@ package com.foodorder.backend.order.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,7 +38,7 @@ public class Order {
     @Column(name = "receiver_email", length = 100, nullable = false)
     private String receiverEmail;
 
-    @Column(name = "delivery_address", length = 255, nullable = false)
+    @Column(name = "delivery_address", length = 255, nullable = true)
     private String deliveryAddress;
 
     @Enumerated(EnumType.STRING)
@@ -58,16 +57,27 @@ public class Order {
     @Column(name = "total_price", precision = 38, scale = 2, nullable = false)
     private BigDecimal totalPrice;
 
+    @Column(name = "discount_amount")
+    private Integer discountAmount;
+
+    public Integer getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(Integer discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "district_id", nullable = false)
+    @Column(name = "district_id", nullable = true)
     private Long districtId;
 
-    @Column(name = "ward_id", nullable = false)
+    @Column(name = "ward_id", nullable = true)
     private Long wardId;
 
     @Enumerated(EnumType.STRING)

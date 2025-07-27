@@ -16,19 +16,37 @@ import com.foodorder.backend.payments.dto.response.PaymentStatusResponse;
 import com.foodorder.backend.payments.service.PaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foodorder.backend.points.repository.RewardPointRepository;
+import com.foodorder.backend.points.repository.PointHistoryRepository;
+import com.foodorder.backend.points.service.PointsService;
+import com.foodorder.backend.user.entity.User;
+import com.foodorder.backend.user.repository.UserRepository;
+import com.foodorder.backend.util.VnCurrencyFormatter;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import com.foodorder.backend.service.BrevoEmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ZaloPayPaymentService extends BasePaymentService implements PaymentService {
+    private static final Logger logger = LoggerFactory.getLogger(ZaloPayPaymentService.class);
+
+    private final UserRepository userRepository;
+    private final RewardPointRepository rewardPointRepository;
+    private final PointHistoryRepository pointHistoryRepository;
+    private final com.foodorder.backend.points.service.PointsService pointsService;
+    private final BrevoEmailService brevoEmailService;
+    private final TemplateEngine templateEngine;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final OrderTrackingRepository orderTrackingRepository;
@@ -50,9 +68,21 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
 
     // Constructor để gọi super()
     public ZaloPayPaymentService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
-            OrderTrackingRepository orderTrackingRepository) {
+            OrderTrackingRepository orderTrackingRepository,
+            RewardPointRepository rewardPointRepository,
+            PointHistoryRepository pointHistoryRepository,
+            UserRepository userRepository,
+            PointsService pointsService,
+            BrevoEmailService brevoEmailService,
+            TemplateEngine templateEngine) {
         super(orderRepository, orderItemRepository);
         this.orderTrackingRepository = orderTrackingRepository;
+        this.rewardPointRepository = rewardPointRepository;
+        this.pointHistoryRepository = pointHistoryRepository;
+        this.userRepository = userRepository;
+        this.pointsService = pointsService;
+        this.brevoEmailService = brevoEmailService;
+        this.templateEngine = templateEngine;
     }
 
     @Override
@@ -96,6 +126,11 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             Map<String, Object> embedData = new HashMap<>();
             embedData.put("redirecturl", redirectUrl);
 
+            // Thêm discountAmount (số tiền giảm từ điểm) vào embed_data nếu có
+            if (order.getDiscountAmount() != null && order.getDiscountAmount() > 0) {
+                embedData.put("discountAmount", order.getDiscountAmount());
+            }
+
             // Thêm embedData từ PaymentRequest nếu có (dành cho ATM)
             if (request.getEmbedData() != null && !request.getEmbedData().isEmpty()) {
                 try {
@@ -105,7 +140,6 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
                     embedData.putAll(additionalEmbedData);
                 } catch (JsonProcessingException e) {
                     System.err.println("Failed to parse embedData from request: " + e.getMessage());
-                    // Nếu parse lỗi, vẫn tiếp tục với embedData mặc định
                 }
             }
 
@@ -132,6 +166,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             body.put("callback_url", callbackUrl);
             body.put("mac", mac);
 
+            System.err.println("ZaloPay request body: " + body);
             // Serialize toàn bộ body thành JSON string
             String bodyJson = objectMapper.writeValueAsString(body);
 
@@ -178,7 +213,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
         try {
             // Kiểm tra các field bắt buộc
             if (callback.getData() == null || callback.getMac() == null) {
-                return "OK"; // Vẫn return OK để không bị retry
+                return "OK";
             }
 
             // Verify MAC signature với key2
@@ -186,10 +221,9 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             HmacUtils hmacUtils = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, key2);
             String expectedMac = hmacUtils.hmacHex(dataStr);
 
-
             if (!expectedMac.equals(callback.getMac())) {
                 System.err.println("Invalid MAC signature. Expected: " + expectedMac + ", Got: " + callback.getMac());
-                return "OK"; // Vẫn return OK để không bị retry
+                return "OK";
             }
 
             // Parse JSON data từ callback
@@ -213,16 +247,110 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             }
             Long orderId = Long.parseLong(parts[1]);
 
+            // Lấy Order từ DB
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+            // Lấy discountAmount từ embed_data - Đổi tên biến để tránh conflict
+            Integer embedDiscountAmount = null;
+            if (callbackData.containsKey("embed_data")) {
+                String embedDataStr = (String) callbackData.get("embed_data");
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> embedDataMap = objectMapper.readValue(embedDataStr, Map.class);
+                    if (embedDataMap.containsKey("discountAmount")) {
+                        embedDiscountAmount = (Integer) embedDataMap.get("discountAmount");
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to parse embed_data in callback: " + e.getMessage());
+                }
+            }
+
+            // Trừ điểm và lưu log nếu embedDiscountAmount > 0
+            if (embedDiscountAmount != null && embedDiscountAmount > 0) {
+                if (order.getUserId() != null) {
+                    pointsService.usePointsOnOrder(order.getUserId(), orderId, embedDiscountAmount,
+                            "Dùng điểm thanh toán đơn hàng #" + orderId);
+                }
+            }
+
+            // Cộng điểm thưởng 2% giá trị đơn hàng nếu thanh toán thành công
+            int rewardAmount = 0;
+            if (order.getUserId() != null && order.getTotalPrice() != null) {
+                rewardAmount = (int) Math.round(order.getTotalPrice().doubleValue() * 0.02);
+                if (rewardAmount > 0) {
+                    pointsService.addPointsOnOrder(order.getUserId(), orderId, rewardAmount,
+                            "Cộng điểm thanh toán đơn hàng #" + orderId);
+                }
+            }
+
+            // Gửi email thông báo đơn hàng thành công
+            try {
+                User user = userRepository.findById(order.getUserId()).orElse(null);
+                if (user != null && user.getEmail() != null) {
+                    String subject = "Đơn hàng của bạn đã thanh toán thành công";
+                    Context context = new Context();
+                    context.setVariable("fullName", user.getFullName() != null ? user.getFullName() : user.getEmail());
+                    context.setVariable("orderId", orderId);
+
+                    // Truyền danh sách sản phẩm với format đúng
+                    List<Map<String, Object>> orderItems = new ArrayList<>();
+                    List<OrderItem> items = orderItemRepository.findByOrderId(orderId);
+                    for (OrderItem item : items) {
+                        Map<String, Object> itemMap = new HashMap<>();
+                        itemMap.put("foodName", item.getFood() != null ? item.getFood().getName() : "");
+                        itemMap.put("quantity", item.getQuantity() != null ? item.getQuantity() : 0);
+
+                        // Format giá tiền đúng cách - kiểm tra null trước
+                        long price = item.getPrice() != null ? item.getPrice().longValue() : 0;
+                        int quantity = item.getQuantity() != null ? item.getQuantity() : 0;
+                        long total = price * quantity;
+
+                        itemMap.put("price", item.getPrice()); // Giữ nguyên cho tính toán
+                        itemMap.put("priceFormatted", VnCurrencyFormatter.format(price));
+                        itemMap.put("totalFormatted", VnCurrencyFormatter.format(total));
+
+                        orderItems.add(itemMap);
+                    }
+                    context.setVariable("orderItems", orderItems);
+
+                    // Các giá trị tổng - kiểm tra null và đổi tên biến
+                    long orderTotalPrice = order.getTotalPrice() != null ? order.getTotalPrice().longValue() : 0;
+                    long orderDiscountAmount = order.getDiscountAmount() != null ? order.getDiscountAmount().longValue() : 0;
+
+                    context.setVariable("totalPriceFormatted", VnCurrencyFormatter.format(orderTotalPrice));
+                    context.setVariable("discountAmountFormatted", VnCurrencyFormatter.format(orderDiscountAmount));
+
+                    // Thêm các giá trị không format cho điều kiện check
+                    context.setVariable("discountAmount", order.getDiscountAmount());
+                    context.setVariable("totalPrice", order.getTotalPrice());
+                    context.setVariable("orderStatus", order.getStatus() != null ? order.getStatus().name() : "UNKNOWN");
+
+                    // Thông tin giao hàng - kiểm tra null
+                    context.setVariable("receiverName", order.getReceiverName() != null ? order.getReceiverName() : "");
+                    context.setVariable("receiverPhone", order.getReceiverPhone() != null ? order.getReceiverPhone() : "");
+                    context.setVariable("receiverEmail", order.getReceiverEmail() != null ? order.getReceiverEmail() : "");
+                    context.setVariable("deliveryAddress", order.getDeliveryAddress() != null ? order.getDeliveryAddress() : "");
+                    context.setVariable("deliveryType", order.getDeliveryType() != null ? order.getDeliveryType() : "");
+                    context.setVariable("paymentMethod", order.getPaymentMethod() != null ? order.getPaymentMethod() : "");
+
+                    String htmlContent = templateEngine.process("order_success_email.html", context);
+//                    logger.info("Nội dung email gửi cho khách hàng: \n" + htmlContent);
+                    brevoEmailService.sendEmail(user.getEmail(), subject, htmlContent);
+                }
+            } catch (Exception emailEx) {
+                // Log lỗi gửi email, không throw exception để không ảnh hưởng callback
+                logger.error("Gửi email thông báo đơn hàng thất bại: " + emailEx.getMessage(), emailEx);
+            }
+
             // ZaloPay chỉ gửi callback khi thanh toán THÀNH CÔNG
-            // Nên chúng ta mặc định đây là thanh toán thành công
             updateOrderPaymentStatus(orderId, zpTransId, "PAID");
 
-            return "OK"; // Phải return "OK" để ZaloPay biết đã nhận callback thành công
+            return "OK";
 
         } catch (Exception e) {
             // Log error nhưng vẫn return OK để tránh ZaloPay retry
-            System.err.println("Error processing callback: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error processing callback: {}", e.getMessage(), e);
             return "OK";
         }
     }

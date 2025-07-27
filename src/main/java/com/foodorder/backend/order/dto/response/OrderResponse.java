@@ -25,6 +25,17 @@ public class OrderResponse {
     private String status;
     private String paymentStatus;
     private BigDecimal totalPrice;
+
+    private Integer discountAmount;
+
+    public Integer getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(Integer discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
     private LocalDateTime createdAt;
     private List<OrderItemResponse> items;
 

@@ -62,6 +62,7 @@ public class OrderServiceImpl implements OrderService {
                 .status(OrderStatus.PENDING)
                 .paymentStatus(PaymentStatus.PENDING)
                 .totalPrice(orderRequest.getTotalPrice())
+                .discountAmount(orderRequest.getDiscountAmount())
                 .districtId(orderRequest.getDistrictId())
                 .wardId(orderRequest.getWardId())
                 .build();
@@ -109,6 +110,7 @@ public class OrderServiceImpl implements OrderService {
                 .status(order.getStatus().name())
                 .paymentStatus(order.getPaymentStatus().name())
                 .totalPrice(order.getTotalPrice())
+                .discountAmount(orderRequest.getDiscountAmount())
                 .createdAt(order.getCreatedAt())
                 .items(orderItems.stream().map(item -> OrderResponse.OrderItemResponse.builder()
                         .foodId(item.getFoodId())

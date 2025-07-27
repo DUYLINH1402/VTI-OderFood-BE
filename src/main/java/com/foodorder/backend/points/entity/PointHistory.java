@@ -20,8 +20,9 @@ public class PointHistory {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private String type; // EARN, USE, REFUND, EXPIRE...
+    private PointType type; // EARN, USE, REFUND, EXPIRE...
 
     @Column(name = "amount", nullable = false)
     @Builder.Default

@@ -47,8 +47,8 @@ public class PaymentController {
     // Endpoint linh hoạt để handle ZaloPay callback với nhiều format
     @PostMapping("/zalopay/callback-flexible")
     public String handleZaloPayCallbackFlexible(@RequestBody Map<String, Object> payload) {
-        System.out.println("=== Received ZaloPay Callback ===");
-        System.out.println("Raw payload: " + payload);
+        // System.out.println("=== Received ZaloPay Callback ===");
+        // System.out.println("Raw payload: " + payload);
 
         try {
             ObjectMapper objectMapper = new ObjectMapper();
@@ -69,9 +69,9 @@ public class PaymentController {
                 callback.setType((Integer) payload.get("type"));
             }
 
-            System.out.println("Parsed callback - Data: " + callback.getData());
-            System.out.println("Parsed callback - MAC: " + callback.getMac());
-            System.out.println("Parsed callback - Type: " + callback.getType());
+            // System.out.println("Parsed callback - Data: " + callback.getData());
+            // System.out.println("Parsed callback - MAC: " + callback.getMac());
+            // System.out.println("Parsed callback - Type: " + callback.getType());
 
             if (callback.getData() != null && callback.getMac() != null) {
                 return zaloPayService.handleCallback(callback);

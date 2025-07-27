@@ -60,7 +60,7 @@ zalopay:
   key1: ${ZALOPAY_KEY1}
   key2: ${ZALOPAY_KEY2}
   endpoint: https://sb-openapi.zalopay.vn/v2/create
-  callback-url:  https://a8f0af140be2.ngrok-free.app/api/payments/zalopay/callback-flexible
+  callback-url:  https://00e91c6c43e4.ngrok-free.app/api/payments/zalopay/callback-flexible
 
 logging:
   level:
