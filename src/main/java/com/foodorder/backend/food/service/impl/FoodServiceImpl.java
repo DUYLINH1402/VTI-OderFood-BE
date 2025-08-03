@@ -7,6 +7,7 @@ import com.foodorder.backend.category.entity.Category;
 import com.foodorder.backend.food.entity.Food;
 import com.foodorder.backend.food.entity.FoodImage;
 import com.foodorder.backend.exception.ResourceNotFoundException;
+import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.category.repository.CategoryRepository;
 import com.foodorder.backend.food.repository.FoodImageRepository;
 import com.foodorder.backend.food.repository.FoodRepository;
@@ -74,7 +75,7 @@ public class FoodServiceImpl implements FoodService {
                 String imageUrl = s3Service.uploadFile(image);
                 food.setImageUrl(imageUrl);
             } catch (IOException e) {
-                throw new RuntimeException("IMAGE_UPLOAD_FAILED", e);
+                throw new BadRequestException("IMAGE_UPLOAD_FAILED", "IMAGE_UPLOAD_FAILED");
             }
         }
 
@@ -118,7 +119,7 @@ public class FoodServiceImpl implements FoodService {
                 existingFood.setImageUrl(imageUrl);
 
             } catch (IOException e) {
-                throw new RuntimeException("IMAGE_UPLOAD_FAILED", e);
+                throw new BadRequestException("IMAGE_UPLOAD_FAILED", "IMAGE_UPLOAD_FAILED");
             }
         }
 
@@ -230,4 +231,3 @@ public class FoodServiceImpl implements FoodService {
 
 
 }
-

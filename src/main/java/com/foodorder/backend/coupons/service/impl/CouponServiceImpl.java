@@ -14,6 +14,8 @@ import com.foodorder.backend.user.repository.UserRepository;
 import com.foodorder.backend.user.entity.User;
 import com.foodorder.backend.order.entity.Order;
 import com.foodorder.backend.order.repository.OrderRepository;
+import com.foodorder.backend.exception.BadRequestException;
+import com.foodorder.backend.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -61,7 +63,7 @@ public class CouponServiceImpl implements CouponService {
 
         // Check code uniqueness
         if (couponRepository.findByCode(request.getCode()).isPresent()) {
-            throw new RuntimeException("Coupon code already exists: " + request.getCode());
+            throw new BadRequestException("Coupon code already exists: " + request.getCode(), "COUPON_CODE_EXISTS");
         }
 
         // Build coupon entity
@@ -94,7 +96,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public CouponResponse updateCoupon(Long id, CouponRequest request) {
         Coupon coupon = couponRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Coupon not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + id, "COUPON_NOT_FOUND"));
 
         // Validate business rules
         validateCouponRequest(request);
@@ -102,7 +104,7 @@ public class CouponServiceImpl implements CouponService {
         // Check code uniqueness (exclude current coupon)
         Optional<Coupon> existingCoupon = couponRepository.findByCode(request.getCode());
         if (existingCoupon.isPresent() && !existingCoupon.get().getId().equals(id)) {
-            throw new RuntimeException("Coupon code already exists: " + request.getCode());
+            throw new BadRequestException("Coupon code already exists: " + request.getCode(), "COUPON_CODE_EXISTS");
         }
 
         // Update fields
@@ -129,7 +131,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void deleteCoupon(Long id) {
         Coupon coupon = couponRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Coupon not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + id, "COUPON_NOT_FOUND"));
 
         // Soft delete - change status to INACTIVE
         coupon.setStatus(CouponStatus.INACTIVE);
@@ -173,7 +175,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public List<CouponResponse> getAvailableCouponsForUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId, "USER_NOT_FOUND"));
 
         return couponRepository.findAvailableCouponsForUser(user, LocalDateTime.now()).stream()
                 .map(CouponResponse::fromEntity)
@@ -188,36 +190,42 @@ public class CouponServiceImpl implements CouponService {
                     .orElse(null);
 
             if (coupon == null) {
-                return CouponApplyResult.failure("Coupon code not found");
+                return CouponApplyResult.failure("COUPON_NOT_FOUND");
             }
 
             // Find user
             User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found", "USER_NOT_FOUND"));
 
             // Get user usage count for this coupon
             long userUsageCount = couponUsageRepository.countByCouponAndUser(coupon, user);
 
             // Validate coupon conditions
             if (!coupon.canUserUseCoupon(user, userUsageCount)) {
-                return CouponApplyResult.failure("Coupon is not valid for this user or has been used up");
+                return CouponApplyResult.failure("COUPON_NOT_VALID");
             }
 
             // Check minimum order amount
             if (coupon.getMinOrderAmount() != null && request.getOrderAmount() < coupon.getMinOrderAmount()) {
                 return CouponApplyResult.failure(
-                    String.format("Minimum order amount is %.0f", coupon.getMinOrderAmount())
+                    String.format("MIN_ORDER_AMOUNT_NOT_MET", coupon.getMinOrderAmount())
+
                 );
             }
 
             // Check applicable foods (if specified)
             if (coupon.getApplicableFoods() != null && !coupon.getApplicableFoods().isEmpty()) {
+                // Kiểm tra request có foodIds không
+                if (request.getFoodIds() == null || request.getFoodIds().isEmpty()) {
+                    return CouponApplyResult.failure("NO_FOOD_ITEMS");
+                }
+
                 boolean hasApplicableFood = request.getFoodIds().stream()
                     .anyMatch(foodId -> coupon.getApplicableFoods().stream()
                         .anyMatch(food -> food.getId().equals(foodId)));
 
                 if (!hasApplicableFood) {
-                    return CouponApplyResult.failure("Coupon is not applicable to items in your order");
+                    return CouponApplyResult.failure("COUPON_NOT_APPLICABLE");
                 }
             }
 
@@ -232,7 +240,7 @@ public class CouponServiceImpl implements CouponService {
             );
 
         } catch (Exception e) {
-            return CouponApplyResult.failure("Error validating coupon: " + e.getMessage());
+            return CouponApplyResult.failure("COUPON_VALIDATION_ERROR" + e.getMessage());
         }
     }
 
@@ -251,13 +259,13 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void confirmCouponUsage(String couponCode, Long userId, Long orderId, Double discountAmount) {
         Coupon coupon = couponRepository.findByCode(couponCode.toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Coupon not found: " + couponCode));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found: " + couponCode, "COUPON_NOT_FOUND"));
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId, "USER_NOT_FOUND"));
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId, "ORDER_NOT_FOUND"));
 
         // Create usage record
         CouponUsage usage = CouponUsage.builder()
@@ -284,7 +292,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void cancelCouponUsage(Long couponUsageId) {
         CouponUsage usage = couponUsageRepository.findById(couponUsageId)
-                .orElseThrow(() -> new RuntimeException("Coupon usage not found with id: " + couponUsageId));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon usage not found with id: " + couponUsageId, "COUPON_USAGE_NOT_FOUND"));
 
         Coupon coupon = usage.getCoupon();
 
@@ -307,7 +315,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void activateCoupon(Long couponId) {
         Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new RuntimeException("Coupon not found with id: " + couponId));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + couponId, "COUPON_NOT_FOUND"));
 
         coupon.setStatus(CouponStatus.ACTIVE);
         couponRepository.save(coupon);
@@ -316,7 +324,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void deactivateCoupon(Long couponId) {
         Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new RuntimeException("Coupon not found with id: " + couponId));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + couponId, "COUPON_NOT_FOUND"));
 
         coupon.setStatus(CouponStatus.INACTIVE);
         couponRepository.save(coupon);
@@ -377,7 +385,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void createBirthdayCouponForUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId, "USER_NOT_FOUND"));
 
         String couponCode = "BIRTHDAY" + userId + "_" + LocalDateTime.now().getYear();
 
@@ -388,10 +396,10 @@ public class CouponServiceImpl implements CouponService {
 
         Coupon birthdayCoupon = Coupon.builder()
                 .code(couponCode)
-                .title("🎉 Happy Birthday!")
+                .title("Happy Birthday!")
                 .description("Special birthday discount just for you!")
                 .discountType(DiscountType.PERCENT)
-                .discountValue(20.0) // 20% discount
+                .discountValue(10.0) // 10% discount
                 .maxDiscountAmount(100000.0) // Max 100k VND
                 .minOrderAmount(50000.0) // Min 50k VND
                 .maxUsage(1)
@@ -407,7 +415,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void createFirstOrderCouponForUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId, "USER_NOT_FOUND"));
 
         String couponCode = "WELCOME" + userId;
 
@@ -418,7 +426,7 @@ public class CouponServiceImpl implements CouponService {
 
         Coupon welcomeCoupon = Coupon.builder()
                 .code(couponCode)
-                .title("🎁 Welcome to FoodOrder!")
+                .title("Welcome to FoodOrder!")
                 .description("Get discount on your first order!")
                 .discountType(DiscountType.AMOUNT)
                 .discountValue(30000.0) // 30k VND discount
@@ -436,7 +444,7 @@ public class CouponServiceImpl implements CouponService {
     @Override
     public void sendPrivateCouponToUsers(Long couponId, List<Long> userIds) {
         Coupon coupon = couponRepository.findById(couponId)
-                .orElseThrow(() -> new RuntimeException("Coupon not found with id: " + couponId));
+                .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + couponId, "COUPON_NOT_FOUND"));
 
         List<User> users = userRepository.findAllById(userIds);
 
@@ -456,21 +464,21 @@ public class CouponServiceImpl implements CouponService {
     private void validateCouponRequest(CouponRequest request) {
         // Additional business validations beyond Bean Validation
         if (request.getStartDate().isAfter(request.getEndDate())) {
-            throw new RuntimeException("Start date must be before end date");
+            throw new BadRequestException("Start date must be before end date", "INVALID_DATE_RANGE");
         }
 
         if (request.getDiscountType() == DiscountType.PERCENT) {
             if (request.getDiscountValue() > 100) {
-                throw new RuntimeException("Percentage discount cannot exceed 100%");
+                throw new BadRequestException("Percentage discount cannot exceed 100%", "INVALID_DISCOUNT_PERCENT");
             }
             if (request.getMaxDiscountAmount() == null) {
-                throw new RuntimeException("Max discount amount is required for percentage discounts");
+                throw new BadRequestException("Max discount amount is required for percentage discounts", "MAX_DISCOUNT_REQUIRED");
             }
         }
 
         if (request.getCouponType() == CouponType.PRIVATE) {
             if (request.getApplicableUserIds() == null || request.getApplicableUserIds().isEmpty()) {
-                throw new RuntimeException("Applicable user IDs are required for private coupons");
+                throw new BadRequestException("Applicable user IDs are required for private coupons", "APPLICABLE_USERS_REQUIRED");
             }
         }
     }

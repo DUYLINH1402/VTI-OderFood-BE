@@ -49,6 +49,7 @@ Luôn comment rõ ràng ở các hàm xử lý nghiệp vụ hoặc logic phức
 - Luôn trả về thông báo lỗi rõ ràng, dễ hiểu cho client: Thống nhất format lỗi, status code.
 - Quy trình phát triển: Sử dụng branch cho từng tính năng, commit message rõ ràng, review code trước khi merge, viết test cho các service/controller quan trọng, dùng môi trường dev/test trước khi lên production.
 - Lưu ý bảo mật: Luôn kiểm tra xác thực và phân quyền trước các thao tác nhạy cảm, sử dụng biến môi trường cho thông tin bảo mật, đảm bảo bảo mật dữ liệu người dùng.
+- Khi trả về message lỗi cho FE, luôn trả về dưới dạng mã lỗi chuẩn hóa (errorCode), ví dụ: COUPON_NOT_FOUND, INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED... FE sẽ dựa vào errorCode để xử lý và hiển thị thông báo phù hợp. Không trả về message lỗi dạng tự do hoặc chỉ tiếng Anh.
 
 ## Cấu trúc thư mục Backend
 

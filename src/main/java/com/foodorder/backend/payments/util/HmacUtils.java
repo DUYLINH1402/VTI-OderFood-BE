@@ -1,6 +1,8 @@
 package com.foodorder.backend.payments.util;
 
 
+import com.foodorder.backend.exception.BadRequestException;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -20,9 +22,8 @@ public class HmacUtils {
             }
             return hexString.toString();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new BadRequestException("Failed to generate HMAC", "HMAC_GENERATION_FAILED");
         }
     }
 
 }
-

@@ -28,6 +28,11 @@ public class OrderResponse {
 
     private Integer discountAmount;
 
+    // === THÊM CÁC FIELD CHO COUPON ===
+    private String couponCode; // Mã coupon đã sử dụng
+    private Double couponDiscountAmount; // Số tiền giảm từ coupon
+    private Double originalAmount; // Số tiền gốc trước khi áp dụng coupon
+
     public Integer getDiscountAmount() {
         return discountAmount;
     }

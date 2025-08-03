@@ -1,5 +1,6 @@
 package com.foodorder.backend.payments.service.impl;
 
+import com.foodorder.backend.exception.ResourceNotFoundException;
 import com.foodorder.backend.order.entity.Order;
 import com.foodorder.backend.order.entity.OrderItem;
 import com.foodorder.backend.order.entity.OrderStatus;
@@ -21,7 +22,7 @@ public abstract class BasePaymentService {
     protected Order getOrderWithItems(Long orderId) {
         Order order = orderRepository.findByIdWithItems(orderId);
         if (order == null) {
-            throw new RuntimeException("Order not found with id: " + orderId);
+            throw new ResourceNotFoundException("Order not found with id: " + orderId, "ORDER_NOT_FOUND");
         }
 
         // Validate order status

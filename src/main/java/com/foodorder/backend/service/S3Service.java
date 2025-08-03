@@ -3,6 +3,7 @@
 package com.foodorder.backend.service;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.foodorder.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class S3Service {
         // Trả về public URL (giả sử bucket đang public)
         return amazonS3.getUrl(bucketName, fileName).toString();
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file to S3", e);
+            throw new BadRequestException("Failed to upload file to S3", "S3_UPLOAD_FAILED");
         }
     }
 
@@ -50,7 +51,7 @@ public class S3Service {
             String key = uri.getPath().substring(1); // bỏ dấu "/" đầu tiên
             amazonS3.deleteObject(bucketName, key);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to delete image from S3", e);
+            throw new BadRequestException("Failed to delete image from S3", "S3_DELETE_FAILED");
         }
     }
 

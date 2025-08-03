@@ -5,12 +5,25 @@ import com.foodorder.backend.payments.dto.request.ZaloPayCallbackRequest;
 import com.foodorder.backend.payments.dto.response.PaymentResponse;
 import com.foodorder.backend.payments.service.impl.MomoPaymentService;
 import com.foodorder.backend.payments.service.impl.ZaloPayPaymentService;
+import com.foodorder.backend.coupons.service.CouponService;
+import com.foodorder.backend.coupons.dto.request.ApplyCouponRequest;
+import com.foodorder.backend.coupons.dto.response.CouponApplyResult;
+import com.foodorder.backend.points.dto.response.PointsResponseDTO;
+import com.foodorder.backend.points.service.PointsService;
+import com.foodorder.backend.order.repository.OrderRepository;
+import com.foodorder.backend.order.entity.Order;
+import com.foodorder.backend.order.entity.PaymentStatus;
+import com.foodorder.backend.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 
 @RestController
@@ -21,9 +34,20 @@ public class PaymentController {
     private ZaloPayPaymentService zaloPayService;
     @Autowired
     private MomoPaymentService momoPayService;
+    @Autowired
+    private CouponService couponService;
+    @Autowired
+    private PointsService pointsService;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping
     public PaymentResponse createPayment(@RequestBody PaymentRequest request) {
+        // Validate trước khi tạo payment
+        validatePaymentRequest(request);
+
         switch (request.getPaymentMethod().toUpperCase()) {
             case "ZALOPAY":
             case "ATM":
@@ -41,6 +65,106 @@ public class PaymentController {
                 return codResponse;
             default:
                 throw new IllegalArgumentException("Invalid payment method: " + request.getPaymentMethod());
+        }
+    }
+
+    /**
+     * Validate toàn bộ điều kiện trước khi tạo payment
+     * - Order đã được validate coupon từ trước khi lưu
+     * - Chỉ cần kiểm tra lại tính nhất quán
+     */
+    private void validatePaymentRequest(PaymentRequest request) {
+        // Lấy thông tin order
+        Order order = orderRepository.findById(request.getOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + request.getOrderId()));
+
+        // 1. Kiểm tra trạng thái order
+        if (order.getPaymentStatus() != PaymentStatus.PENDING) {
+            throw new IllegalArgumentException("Order payment status is not PENDING: " + order.getPaymentStatus());
+        }
+
+        // 2. Kiểm tra lại coupon nếu có (chỉ để đảm bảo tính nhất quán)
+        if (order.getCouponCode() != null && !order.getCouponCode().trim().isEmpty()) {
+            validateCouponConsistency(order);
+        }
+
+        // 3. Validate điểm thưởng nếu có sử dụng
+        if (order.getDiscountAmount() != null && order.getDiscountAmount() > 0) {
+            validatePointsForPayment(order);
+        }
+
+        System.out.println("Payment validation passed for order: " + order.getId());
+    }
+
+    /**
+     * Kiểm tra tính nhất quán của coupon (Order đã validate từ trước)
+     * Chỉ cần đảm bảo coupon vẫn hợp lệ tại thời điểm thanh toán
+     */
+    private void validateCouponConsistency(Order order) {
+        try {
+            // Kiểm tra nhanh coupon vẫn còn hợp lệ không
+            ApplyCouponRequest couponRequest = new ApplyCouponRequest();
+            couponRequest.setCouponCode(order.getCouponCode());
+            couponRequest.setUserId(order.getUserId());
+            couponRequest.setOrderAmount(order.getOriginalAmount() != null ?
+                order.getOriginalAmount().doubleValue() : order.getTotalPrice().doubleValue());
+
+            // Lấy danh sách foodIds từ order items
+            if (order.getItems() != null && !order.getItems().isEmpty()) {
+                List<Long> foodIds = order.getItems().stream()
+                    .map(item -> item.getFoodId())
+                    .collect(Collectors.toList());
+                couponRequest.setFoodIds(foodIds);
+            } else {
+                couponRequest.setFoodIds(new ArrayList<>());
+            }
+
+            CouponApplyResult result = couponService.validateCouponForOrder(couponRequest);
+
+            if (!Boolean.TRUE.equals(result.getSuccess())) {
+                throw new IllegalArgumentException("Coupon không còn hợp lệ tại thời điểm thanh toán: " + result.getMessage());
+            }
+
+            // Kiểm tra số tiền giảm giá có khớp không (cho phép sai số nhỏ)
+            if (order.getCouponDiscountAmount() != null && result.getDiscountAmount() != null) {
+                double expectedDiscount = result.getDiscountAmount();
+                double actualDiscount = order.getCouponDiscountAmount().doubleValue();
+
+                if (Math.abs(expectedDiscount - actualDiscount) > 0.01) {
+                    throw new IllegalArgumentException("Coupon discount amount mismatch. Expected: " +
+                        expectedDiscount + ", Actual: " + actualDiscount);
+                }
+            }
+
+            System.out.println("Coupon consistency check passed: " + order.getCouponCode());
+
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Lỗi kiểm tra coupon: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Validate điểm thưởng cho payment
+     */
+    private void validatePointsForPayment(Order order) {
+        if (order.getUserId() == null) {
+            throw new IllegalArgumentException("Guest user không thể sử dụng điểm thưởng");
+        }
+        try {
+            // Lấy username từ userId
+            String username = userRepository.findById(order.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + order.getUserId()))
+                .getUsername();
+            // Lấy số điểm hiện tại của user
+            PointsResponseDTO pointsDTO = pointsService.getCurrentPointsByUsername(username);
+            int currentPoints = pointsDTO != null ? pointsDTO.getAvailablePoints() : 0;
+            // Tính số điểm cần dùng (giả sử 1 điểm = 1000 VND)
+            int pointsNeeded = order.getDiscountAmount() / 1000;
+            if (currentPoints < pointsNeeded) {
+                throw new IllegalArgumentException("Không đủ điểm thưởng. Cần " + pointsNeeded + " điểm, hiện có " + currentPoints + " điểm");
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Lỗi kiểm tra điểm thưởng: " + e.getMessage());
         }
     }
 

@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
         try {
             imageUrl = s3Service.uploadFile(file);
         } catch (IOException e) {
-            throw new RuntimeException("UPLOAD_FAILED", e);
+            throw new BadRequestException("UPLOAD_FAILED", "UPLOAD_FAILED");
         }
 
         // 2. Xoá ảnh cũ nếu có (chỉ khi ảnh mới đã upload thành công)

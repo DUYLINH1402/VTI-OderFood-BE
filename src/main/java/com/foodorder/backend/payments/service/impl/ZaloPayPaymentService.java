@@ -1,5 +1,6 @@
 package com.foodorder.backend.payments.service.impl;
 
+import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.order.entity.Order;
 import com.foodorder.backend.order.entity.OrderItem;
 import com.foodorder.backend.order.entity.OrderStatus;
@@ -118,7 +119,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             try {
                 itemsJson = objectMapper.writeValueAsString(items);
             } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to convert items to JSON", e);
+                throw new BadRequestException("Failed to convert items to JSON", "JSON_CONVERSION_ERROR");
             }
 
             // Embed data (redirect về trang thank you)
@@ -181,13 +182,13 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             ResponseEntity<Map> resp = restTemplate.postForEntity(endpoint, httpEntity, Map.class);
 
             if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
-                throw new RuntimeException("Call ZaloPay API failed");
+                throw new BadRequestException("Call ZaloPay API failed", "ZALOPAY_API_ERROR");
             }
 
             @SuppressWarnings("unchecked")
             Map<String, Object> respBody = resp.getBody();
             if (respBody == null) {
-                throw new RuntimeException("Empty response from ZaloPay API");
+                throw new BadRequestException("Empty response from ZaloPay API", "ZALOPAY_EMPTY_RESPONSE");
             }
             String orderUrl = (String) respBody.get("order_url"); // Link để redirect khách sang ZaloPay
 
@@ -199,7 +200,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             return paymentResponse;
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to process JSON", e);
+            throw new BadRequestException("Failed to process JSON", "JSON_PROCESSING_ERROR");
         }
     }
 
@@ -441,10 +442,9 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
                 return response;
             }
 
-            throw new RuntimeException("Failed to query payment status from ZaloPay");
-
+            throw new BadRequestException("Failed to query payment status from ZaloPay", "ZALOPAY_QUERY_ERROR");
         } catch (Exception e) {
-            throw new RuntimeException("Error querying payment status: " + e.getMessage(), e);
+            throw new BadRequestException("Error querying payment status: " + e.getMessage(), "ZALOPAY_QUERY_ERROR");
         }
     }
 }

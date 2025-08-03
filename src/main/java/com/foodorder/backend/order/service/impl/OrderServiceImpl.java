@@ -1,5 +1,6 @@
 package com.foodorder.backend.order.service.impl;
 
+import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.food.entity.Food;
 import com.foodorder.backend.food.repository.FoodRepository;
 import com.foodorder.backend.order.dto.request.*;
@@ -9,15 +10,21 @@ import com.foodorder.backend.order.dto.response.OrderStatisticsResponse;
 import com.foodorder.backend.order.entity.*;
 import com.foodorder.backend.order.repository.*;
 import com.foodorder.backend.order.service.OrderService;
+import com.foodorder.backend.coupons.service.CouponService;
+import com.foodorder.backend.coupons.dto.request.ApplyCouponRequest;
+import com.foodorder.backend.coupons.dto.response.CouponApplyResult;
+import com.foodorder.backend.points.service.PointsService;
+import com.foodorder.backend.points.dto.response.PointsResponseDTO;
+import com.foodorder.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,11 +34,14 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderTrackingRepository orderTrackingRepository;
     private final FoodRepository foodRepository;
+    private final CouponService couponService;
+    private final PointsService pointsService;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public OrderResponse createOrder(OrderRequest orderRequest) {
-        // Validate items first
+        // === BƯỚC 1: VALIDATE CƠ BẢN ===
         if (orderRequest.getItems() == null || orderRequest.getItems().isEmpty()) {
             throw new IllegalArgumentException("Order items cannot be null or empty");
         }
@@ -49,9 +59,57 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // 1. Create Order
+        // === BƯỚC 2: VALIDATE COUPON TRƯỚC KHI LƯU ORDER ===
+        BigDecimal finalAmount = orderRequest.getTotalPrice();
+        BigDecimal originalAmount = orderRequest.getTotalPrice();
+        String appliedCouponCode = null;
+        BigDecimal couponDiscountAmount = null;
+
+        // Kiểm tra coupon nếu có
+        if (orderRequest.getCouponCode() != null && !orderRequest.getCouponCode().trim().isEmpty()) {
+            System.out.println("Validating coupon: " + orderRequest.getCouponCode());
+
+            // Lấy danh sách foodIds từ request
+            List<Long> foodIds = orderRequest.getItems().stream()
+                .map(OrderItemRequest::getFoodId)
+                .collect(Collectors.toList());
+
+            // Tạo coupon request
+            ApplyCouponRequest couponRequest = new ApplyCouponRequest();
+            couponRequest.setCouponCode(orderRequest.getCouponCode().trim());
+            couponRequest.setUserId(orderRequest.getUserId());
+            couponRequest.setOrderAmount(orderRequest.getTotalPrice().doubleValue());
+            couponRequest.setFoodIds(foodIds);
+
+            // Validate coupon
+            CouponApplyResult couponResult = couponService.validateCouponForOrder(couponRequest);
+            System.out.println("CouponCode: " + couponRequest.getCouponCode());
+            System.out.println("UserId: " + couponRequest.getUserId());
+            System.out.println("OrderAmount: " + couponRequest.getOrderAmount());
+            System.out.println("FoodIds: " + couponRequest.getFoodIds());
+            if (!Boolean.TRUE.equals(couponResult.getSuccess())) {
+                throw new BadRequestException("Coupon code not found: " + couponResult.getMessage(), "COUPON_INVALID_");
+            }
+
+            // Áp dụng coupon thành công
+            appliedCouponCode = orderRequest.getCouponCode().trim();
+            couponDiscountAmount = BigDecimal.valueOf(couponResult.getDiscountAmount());
+            originalAmount = orderRequest.getTotalPrice(); // Số tiền gốc
+            finalAmount = originalAmount.subtract(couponDiscountAmount); // Số tiền sau giảm giá
+
+            System.out.println("Coupon applied successfully: " + appliedCouponCode +
+                              ", discount: " + couponDiscountAmount +
+                              ", final amount: " + finalAmount);
+        }
+
+        // === BƯỚC 3: VALIDATE ĐIỂM THƯỞNG NẾU CÓ ===
+        if (orderRequest.getDiscountAmount() != null && orderRequest.getDiscountAmount() > 0) {
+            validatePointsUsage(orderRequest);
+        }
+
+        // === BƯỚC 4: TẠO ORDER VỚI THÔNG TIN ĐÃ VALIDATE ===
         System.out.println("Creating order...");
-        Order tempOrder = Order.builder()
+        Order order = Order.builder()
                 .userId(orderRequest.getUserId())
                 .receiverName(orderRequest.getReceiverName())
                 .receiverPhone(orderRequest.getReceiverPhone())
@@ -61,26 +119,32 @@ public class OrderServiceImpl implements OrderService {
                 .deliveryType(orderRequest.getDeliveryType())
                 .status(OrderStatus.PENDING)
                 .paymentStatus(PaymentStatus.PENDING)
-                .totalPrice(orderRequest.getTotalPrice())
-                .discountAmount(orderRequest.getDiscountAmount())
+                .totalPrice(finalAmount) // Số tiền cuối cùng sau khi áp dụng coupon
+                .discountAmount(orderRequest.getDiscountAmount()) // Discount từ points
                 .districtId(orderRequest.getDistrictId())
                 .wardId(orderRequest.getWardId())
+                // Thêm thông tin coupon đã validate
+                .couponCode(appliedCouponCode)
+                .couponDiscountAmount(couponDiscountAmount)
+                .originalAmount(originalAmount)
                 .build();
-        Order order = orderRepository.save(tempOrder);
 
-        // 2. Create Order Items
+        order = orderRepository.save(order);
+
+        // === BƯỚC 5: TẠO ORDER ITEMS ===
+        final Order finalOrder = order; // Tạo final reference cho lambda
         var orderItems = orderRequest.getItems().stream()
                 .map(itemReq -> {
                     Food food = foodRepository.findById(itemReq.getFoodId())
                             .orElseThrow(() -> new IllegalArgumentException("FOOD_NOT_FOUND: " + itemReq.getFoodId()));
                     OrderItem item = OrderItem.builder()
-                            .orderId(order.getId())
-                            .order(order) // Thêm dòng này để set order object
+                            .orderId(finalOrder.getId())
+                            .order(finalOrder)
                             .foodId(itemReq.getFoodId())
-                            .food(food) // Cũng set food object để đảm bảo
+                            .food(food)
                             .quantity(itemReq.getQuantity())
                             .price(itemReq.getPrice())
-                            .foodName(food.getName()) // BE tự lưu tên món ăn thêm
+                            .foodName(food.getName())
                             .foodSlug(food.getSlug())
                             .imageUrl(food.getImageUrl())
                             .build();
@@ -88,14 +152,14 @@ public class OrderServiceImpl implements OrderService {
                 })
                 .collect(Collectors.toList());
 
-        // 3. Create Order Tracking
+        // === BƯỚC 6: TẠO ORDER TRACKING ===
         OrderTracking tracking = OrderTracking.builder()
                 .orderId(order.getId())
                 .status(OrderTrackingStatus.PENDING)
                 .build();
         orderTrackingRepository.save(tracking);
 
-        // 4. Map to Response
+        // === BƯỚC 7: TRẢ VỀ RESPONSE ===
         return OrderResponse.builder()
                 .orderId(order.getId())
                 .userId(order.getUserId())
@@ -109,19 +173,53 @@ public class OrderServiceImpl implements OrderService {
                 .wardId(order.getWardId())
                 .status(order.getStatus().name())
                 .paymentStatus(order.getPaymentStatus().name())
-                .totalPrice(order.getTotalPrice())
+                .totalPrice(order.getTotalPrice()) // Số tiền cuối cùng
                 .discountAmount(orderRequest.getDiscountAmount())
+                // Thêm thông tin coupon vào response
+                .couponCode(appliedCouponCode)
+                .couponDiscountAmount(couponDiscountAmount != null ? couponDiscountAmount.doubleValue() : null)
+                .originalAmount(originalAmount != null ? originalAmount.doubleValue() : null)
                 .createdAt(order.getCreatedAt())
                 .items(orderItems.stream().map(item -> OrderResponse.OrderItemResponse.builder()
                         .foodId(item.getFoodId())
-                        .foodName(item.getFoodName()) // lấy từ order_items
+                        .foodName(item.getFoodName())
                         .foodSlug(item.getFoodSlug())
                         .imageUrl(item.getImageUrl())
                         .quantity(item.getQuantity())
                         .price(item.getPrice())
                         .build()).collect(Collectors.toList()))
                 .build();
+    }
 
+    /**
+     * Validate việc sử dụng điểm thưởng
+     */
+    private void validatePointsUsage(OrderRequest orderRequest) {
+        if (orderRequest.getUserId() == null) {
+            throw new BadRequestException("Không thể áp dụng coupon cho đơn hàng không có userId (khách chưa đăng nhập)", "COUPON_USERID_NULL");
+        }
+
+        try {
+            // Lấy username từ userId
+            String username = userRepository.findById(orderRequest.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user với id: " + orderRequest.getUserId()))
+                .getUsername();
+
+            // Lấy số điểm hiện tại của user
+            PointsResponseDTO pointsDTO = pointsService.getCurrentPointsByUsername(username);
+            int currentPoints = pointsDTO != null ? pointsDTO.getAvailablePoints() : 0;
+
+            // Tính số điểm cần dùng (giả sử 1 điểm = 1000 VND)
+            int pointsNeeded = orderRequest.getDiscountAmount() / 1000;
+
+            if (currentPoints < pointsNeeded) {
+                throw new IllegalArgumentException("Không đủ điểm thưởng. Cần " + pointsNeeded + " điểm, hiện có " + currentPoints + " điểm");
+            }
+
+            System.out.println("Points validation successful: using " + pointsNeeded + " points");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Lỗi kiểm tra điểm thưởng: " + e.getMessage());
+        }
     }
 
     @Override
@@ -252,6 +350,13 @@ public class OrderServiceImpl implements OrderService {
                 .status(order.getStatus().name())
                 .paymentStatus(order.getPaymentStatus().name())
                 .totalPrice(order.getTotalPrice())
+                .discountAmount(order.getDiscountAmount())
+                // Thêm thông tin coupon
+                .couponCode(order.getCouponCode())
+                .couponDiscountAmount(order.getCouponDiscountAmount() != null ?
+                    order.getCouponDiscountAmount().doubleValue() : null)
+                .originalAmount(order.getOriginalAmount() != null ?
+                    order.getOriginalAmount().doubleValue() : null)
                 .createdAt(order.getCreatedAt())
                 .items(orderItems.stream().map(item -> OrderResponse.OrderItemResponse.builder()
                         .foodId(item.getFoodId())

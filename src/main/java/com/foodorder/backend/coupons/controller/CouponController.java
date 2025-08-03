@@ -6,12 +6,15 @@ import com.foodorder.backend.coupons.dto.response.CouponApplyResult;
 import com.foodorder.backend.coupons.dto.response.CouponResponse;
 import com.foodorder.backend.coupons.entity.CouponStatus;
 import com.foodorder.backend.coupons.service.CouponService;
+import com.foodorder.backend.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -131,11 +134,16 @@ public class CouponController {
     }
 
     /**
-     * Lấy danh sách coupon available cho user
-     * GET /api/coupons/user/{userId}/available
+     * Lấy danh sách coupon available cho user hiện tại (từ token)
+     * GET /api/coupons/available
      */
-    @GetMapping("/user/{userId}/available")
-    public ResponseEntity<List<CouponResponse>> getAvailableCouponsForUser(@PathVariable Long userId) {
+    @GetMapping("/available")
+    public ResponseEntity<List<CouponResponse>> getAvailableCouponsForCurrentUser() {
+        // Lấy thông tin user từ token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.getId();
+
         List<CouponResponse> response = couponService.getAvailableCouponsForUser(userId);
         return ResponseEntity.ok(response);
     }
@@ -145,7 +153,12 @@ public class CouponController {
      * POST /api/coupons/validate
      */
     @PostMapping("/validate")
-    public ResponseEntity<CouponApplyResult> validateCoupon(@RequestBody @Valid ApplyCouponRequest request) {
+    public ResponseEntity<CouponApplyResult> validateCoupon(@RequestBody @Valid ApplyCouponRequest request, Authentication authentication) {
+        // Lấy userId từ SecurityContext nếu đã đăng nhập
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            Long userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
+            request.setUserId(userId);
+        }
         CouponApplyResult result = couponService.validateCouponForOrder(request);
         return ResponseEntity.ok(result);
     }
