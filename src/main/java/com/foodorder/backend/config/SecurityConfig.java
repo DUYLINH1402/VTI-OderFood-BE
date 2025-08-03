@@ -52,6 +52,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/feedback-media/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/feedback-media/**").hasRole("ADMIN")
 
+                        // COUPONS
+                        .requestMatchers(HttpMethod.GET, "/api/coupons/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/coupons/code/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/coupons").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/coupons/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/coupons/**").hasRole("ADMIN")
+
                         // Các endpoint khác (nếu có) mặc định phải xác thực
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

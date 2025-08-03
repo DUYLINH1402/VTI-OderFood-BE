@@ -23,6 +23,11 @@ public class OrderRequest {
     private BigDecimal totalPrice;
     private Integer discountAmount;
 
+    // === COUPON FIELDS ===
+    private String couponCode; // Mã coupon user muốn áp dụng
+    private BigDecimal couponDiscountAmount; // Số tiền giảm từ coupon (auto calculated)
+    private BigDecimal originalAmount; // Tổng tiền gốc trước khi áp dụng coupon
+
     public Integer getDiscountAmount() {
         return discountAmount;
     }

@@ -60,13 +60,15 @@ public class Order {
     @Column(name = "discount_amount")
     private Integer discountAmount;
 
-    public Integer getDiscountAmount() {
-        return discountAmount;
-    }
+    // === COUPON INTEGRATION FIELDS ===
+    @Column(name = "coupon_code", length = 50)
+    private String couponCode; // Mã coupon đã sử dụng
 
-    public void setDiscountAmount(Integer discountAmount) {
-        this.discountAmount = discountAmount;
-    }
+    @Column(name = "coupon_discount_amount", precision = 10, scale = 2)
+    private BigDecimal couponDiscountAmount; // Số tiền giảm từ coupon
+
+    @Column(name = "original_amount", precision = 10, scale = 2)
+    private BigDecimal originalAmount; // Tổng tiền gốc trước khi áp dụng coupon
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -7,25 +7,13 @@ spring:
       on-profile: local
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://database-oder-foods.cxsc640aa30j.ap-southeast-1.rds.amazonaws.com:3306/food_ordering_system?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://database-oder-foods.cxsc640aa30j.ap-southeast-1.rds.amazonaws.com:3306/food_ordering_system?useSSL=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true
     username: admin123
     password: Ngaythanhcong1402
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION}
 
-  #  mail:
-  #    host: email-smtp.us-east-1.amazonaws.com
-  #    port: 587
-  #    username: ${YOUR_SMTP_USERNAME}
-  #    password: ${YOUR_SMTP_PASSWORD}
-  #    protocol: smtp
-  #    properties:
-  #      mail:
-  #        smtp:
-  #          auth: true
-  #          starttls:
-  #            enable: true
 
   jpa:
     hibernate:
@@ -33,6 +21,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
 
   servlet:
@@ -64,5 +53,5 @@ zalopay:
 
 logging:
   level:
-    org.springframework.boot.context.config: DEBUG
-    org.springframework.mail: DEBUG
+    com.foodorder.backend.coupons: DEBUG
+    org.springframework.scheduling: INFO

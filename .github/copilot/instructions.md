@@ -24,9 +24,9 @@ Khi viết code, luôn chia rõ ràng các lớp theo kiến trúc Spring Boot:
 - Controller: Xử lý request/response, định nghĩa endpoint, không chứa logic nghiệp vụ.
 - Service: Chứa logic nghiệp vụ, xử lý dữ liệu, gọi repository, tách riêng cho từng module. Nên chia thành interface (Service) và lớp triển khai (ServiceImpl) để dễ mở rộng, test và quản lý nghiệp vụ phức tạp.
 - Repository: Tương tác với database, chỉ chứa các phương thức truy vấn dữ liệu.
-- Entity: Định nghĩa cấu trúc bảng dữ liệu, ánh xạ với DB.
+- Entity: Định nghĩa cấu trúc bảng dữ liệu, ánh xạ với DB, viết rõ các ràng buộc cho tưgf trường
 - DTO: Định nghĩa dữ liệu truyền qua API, tách biệt với entity để bảo mật và dễ mở rộng.
-
+- Các import không viết vào dưới cùng, mà để ở đầu file để dễ dàng quản lý và đọc code.
 Ví dụ:
 
 - `FoodController` chỉ nhận request, trả response, gọi tới `FoodService`.
