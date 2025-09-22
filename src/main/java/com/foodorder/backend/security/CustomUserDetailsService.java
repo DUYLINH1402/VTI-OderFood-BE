@@ -18,8 +18,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Sử dụng method findUserWithRoleByUsername để fetch luôn cả role
         User user = userRepository
-                .findByUsername(username)
+                .findUserWithRoleByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("USER_NOT_FOUND"));
         return new CustomUserDetails(user);
     }

@@ -43,7 +43,7 @@ public class PointsServiceImpl implements PointsService {
                 return new PointsResponseDTO(rewardPoint.getBalance());
         }
 
-        // ✅ CẢI THIỆN: Lịch sử điểm đơn giản và hiệu quả
+        //  CẢI THIỆN: Lịch sử điểm đơn giản và hiệu quả
         @Override
         public Page<PointsHistoryDTO> getPointsHistoryByUsername(String username, Pageable pageable) {
                 var user = userRepository.findByUsername(username)
@@ -83,7 +83,6 @@ public class PointsServiceImpl implements PointsService {
                 var user = userRepository.findById(userId).orElse(null);
                 if (user == null) return;
 
-                // ✅ CẢI THIỆN: Xử lý case chưa có RewardPoint
                 RewardPoint rewardPoint = rewardPointRepository.findByUser(user)
                         .orElseGet(() -> {
                                 RewardPoint newPoint = RewardPoint.builder()

@@ -103,9 +103,9 @@ public class CouponController {
             @RequestParam(defaultValue = "desc") String sortDir) {
 
         Pageable pageable = PageRequest.of(page, size,
-            sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending());
+                sortDir.equalsIgnoreCase("desc")
+                        ? Sort.by(sortBy).descending()
+                        : Sort.by(sortBy).ascending());
 
         Page<CouponResponse> response = couponService.getAllCoupons(pageable);
         return ResponseEntity.ok(response);
@@ -153,11 +153,20 @@ public class CouponController {
      * POST /api/coupons/validate
      */
     @PostMapping("/validate")
-    public ResponseEntity<CouponApplyResult> validateCoupon(@RequestBody @Valid ApplyCouponRequest request, Authentication authentication) {
+    public ResponseEntity<CouponApplyResult> validateCoupon(@RequestBody @Valid ApplyCouponRequest request,
+            Authentication authentication) {
         // Lấy userId từ SecurityContext nếu đã đăng nhập
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
-            Long userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
-            request.setUserId(userId);
+            try {
+                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+                if (userDetails != null) {
+                    Long userId = userDetails.getId();
+                    request.setUserId(userId);
+                }
+            } catch (Exception e) {
+                System.err.println("Error getting userId from CustomUserDetails: " + e.getMessage());
+                // Continue without userId
+            }
         }
         CouponApplyResult result = couponService.validateCouponForOrder(request);
         return ResponseEntity.ok(result);

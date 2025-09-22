@@ -3,11 +3,14 @@ package com.foodorder.backend.auth.service.impl;
 import com.foodorder.backend.auth.dto.request.UserLoginRequest;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.auth.dto.request.UserRegisterRequest;
+import com.foodorder.backend.points.repository.PointHistoryRepository;
 import com.foodorder.backend.user.dto.response.UserResponse;
+import com.foodorder.backend.user.entity.Role;
 import com.foodorder.backend.user.entity.User;
 import com.foodorder.backend.auth.entity.UserToken;
 import com.foodorder.backend.auth.entity.UserTokenType;
 import com.foodorder.backend.user.repository.UserRepository;
+import com.foodorder.backend.user.repository.RoleRepository;
 import com.foodorder.backend.auth.repository.UserTokenRepository;
 import com.foodorder.backend.security.JwtUtil;
 import com.foodorder.backend.service.BrevoEmailService;
@@ -18,7 +21,6 @@ import com.foodorder.backend.points.entity.PointHistory;
 import com.foodorder.backend.points.entity.PointType;
 import com.foodorder.backend.points.repository.RewardPointRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -28,28 +30,22 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
-    @Autowired
-    private final com.foodorder.backend.points.repository.PointHistoryRepository pointHistoryRepository;
-    @Autowired
+    private final PointHistoryRepository pointHistoryRepository;
     private final UserRepository userRepository;
 
-    @Autowired
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
     private final JwtUtil jwtUtil;
 
-    @Autowired
     private final BrevoEmailService brevoEmailService;
 
-    @Autowired
     private final ThymeleafTemplateService thymeleafTemplateService;
 
-    @Autowired
     private final UserTokenRepository userTokenRepository;
 
-    @Autowired
     private final RewardPointRepository rewardPointRepository;
+
+    private final RoleRepository roleRepository;
 
     @Override
     public UserResponse registerUser(UserRegisterRequest request) {
@@ -61,13 +57,17 @@ public class AuthServiceImpl implements AuthService {
             throw new BadRequestException("Email already exists", "EMAIL_ALREADY_EXISTS");
         }
 
+        // Lấy role CUSTOMER từ database
+        Role customerRole = roleRepository.findByCode("ROLE_USER")
+                .orElseThrow(() -> new BadRequestException("Default role not found", "ROLE_NOT_FOUND"));
+
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .isActive(true)
                 .isVerified(false)
-                .role("ROLE_USER")
+                .role(customerRole) // Sử dụng entity Role thay vì enum
                 .build();
 
         userRepository.save(user);
@@ -118,7 +118,8 @@ public class AuthServiceImpl implements AuthService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .role(user.getRole())
+                .roleCode(user.getRoleCode()) // Trả về authority string
+                .roleName(user.getRoleDisplayName()) // Trả về tên hiển thị của role
                 .token(null)
                 .point(rewardPoint.getBalance())
                 .isActive(user.isActive())

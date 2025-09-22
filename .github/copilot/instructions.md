@@ -16,7 +16,7 @@ Luôn phản hồi cho người dùng bằng Tiếng Việt trong mọi tình hu
   - Gửi email xác thực, thông báo trạng thái đơn
 
 ## Quy tắc code Backend (chi tiết từ toàn bộ dự án)
-
+- Không tự ý sửa file .env, phải xác nhận trước khi thay đổi thông tin bảo mật.
 - Kiến trúc chuẩn Spring Boot: Tách rõ Controller, Service, Repository, Entity, DTO cho từng module (auth, cart, food, order, user, payments, zone, feedbacks, favorite...).
 
 Khi viết code, luôn chia rõ ràng các lớp theo kiến trúc Spring Boot:

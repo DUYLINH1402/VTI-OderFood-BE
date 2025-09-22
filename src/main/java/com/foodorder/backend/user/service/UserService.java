@@ -12,8 +12,10 @@ public interface UserService {
     String uploadAvatar(Long userId, MultipartFile file);
     void initiatePasswordReset(String email);
     void resetPassword(String token, String newPassword);
-
-
     void changePassword(Long userId, ChangePasswordRequest request);
-
+    
+    /**
+     * Lấy User theo ID với Role được fetch sẵn để tránh lỗi lazy loading
+     */
+    User findUserWithRoleById(Long userId);
 }

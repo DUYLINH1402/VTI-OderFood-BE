@@ -206,4 +206,10 @@ public class UserServiceImpl implements UserService {
         changePasswordAttemptRepository.save(attempt);
     }
 
+    @Override
+    public User findUserWithRoleById(Long userId) {
+        return userRepository.findUserWithRoleById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found", "USER_NOT_FOUND"));
+    }
+
 }

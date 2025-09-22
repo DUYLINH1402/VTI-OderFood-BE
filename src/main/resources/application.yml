@@ -8,8 +8,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://database-oder-foods.cxsc640aa30j.ap-southeast-1.rds.amazonaws.com:3306/food_ordering_system?useSSL=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true
-    username: admin123
-    password: Ngaythanhcong1402
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
   jwt:
     secret: ${JWT_SECRET}
     expiration: ${JWT_EXPIRATION}
@@ -49,9 +49,33 @@ zalopay:
   key1: ${ZALOPAY_KEY1}
   key2: ${ZALOPAY_KEY2}
   endpoint: https://sb-openapi.zalopay.vn/v2/create
-  callback-url:  https://00e91c6c43e4.ngrok-free.app/api/payments/zalopay/callback-flexible
+  callback-url:  https://dongxanhfoodorder.shop/api/payments/zalopay/callback-flexible
+  redirectUrl:  https://https://dongxanhfood.shop//thanh-toan/ket-qua?appTransId=
+#  callback-url:    https://f7f620ff8181.ngrok-free.app/api/payments/zalopay/callback-flexible
+#  redirectUrl:  http://localhost:5173/thanh-toan/ket-qua?appTransId=
+
+# Cấu hình OpenAI cho Chatbot
+openai:
+  api-key: ${OPENAI_API_KEY}
+  model: gpt-4o
+  max-tokens: 1000
+  temperature: 0.7
+
+# Cấu hình RAG (Retrieval-Augmented Generation)
+chatbot:
+  knowledge-base:
+    update-interval: 3600000 # 1 giờ (ms)
+  context:
+    max-history: 10 # Số tin nhắn tối đa lưu trong lịch sử
+    similarity-threshold: 0.7 # Ngưỡng tương đồng cho RAG
 
 logging:
+
   level:
     com.foodorder.backend.coupons: DEBUG
     org.springframework.scheduling: INFO
+    .org:
+      springframework:
+        messaging=DEBUG:
+        web:
+          socket=DEBUG:

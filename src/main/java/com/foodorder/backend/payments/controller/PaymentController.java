@@ -192,11 +192,6 @@ public class PaymentController {
             if (payload.containsKey("type")) {
                 callback.setType((Integer) payload.get("type"));
             }
-
-            // System.out.println("Parsed callback - Data: " + callback.getData());
-            // System.out.println("Parsed callback - MAC: " + callback.getMac());
-            // System.out.println("Parsed callback - Type: " + callback.getType());
-
             if (callback.getData() != null && callback.getMac() != null) {
                 return zaloPayService.handleCallback(callback);
             } else {

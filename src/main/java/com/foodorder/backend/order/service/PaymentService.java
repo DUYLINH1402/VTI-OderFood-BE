@@ -14,9 +14,9 @@ public class PaymentService {
         
         PaymentConfig config = PaymentConfig.getPaymentConfig(paymentMethod);
         
-        log.info("Creating payment URL for method: {}, bankCode: {}, embedData: {}", 
-                paymentMethod, config.getBankCode(), config.getEmbedData());
-        
+//        log.info("Creating payment URL for method: {}, bankCode: {}, embedData: {}",
+//                paymentMethod, config.getBankCode(), config.getEmbedData());
+//
         if (!config.requiresPaymentGateway()) {
             // COD - No payment URL needed
             return null;
@@ -35,8 +35,7 @@ public class PaymentService {
     }
     
     private String createMoMoPaymentUrl(String orderId, long amount, String description, String returnUrl) {
-        // TODO: Implement MoMo payment URL creation
-        log.info("Creating MoMo payment URL for order: {}, amount: {}", orderId, amount);
+//        log.info("Creating MoMo payment URL for order: {}, amount: {}", orderId, amount);
         
         // MoMo API call here
         // Return the payment URL from MoMo response
@@ -46,16 +45,9 @@ public class PaymentService {
     
     private String createZaloPayPaymentUrl(String orderId, long amount, String description, 
                                          String returnUrl, String bankCode, String embedData) {
-        // TODO: Implement ZaloPay payment URL creation
-        log.info("Creating ZaloPay payment URL for order: {}, amount: {}, bankCode: {}, embedData: {}", 
-                orderId, amount, bankCode, embedData);
-        
-        // ZaloPay API call here with bankCode and embedData
-        // Different logic based on bankCode:
-        // - "" (empty) + embedData: ATM cards
-        // - "zalopayapp": ZaloPay wallet
-        // - "CC": Credit cards
-        
+//        log.info("Creating ZaloPay payment URL for order: {}, amount: {}, bankCode: {}, embedData: {}",
+//                orderId, amount, bankCode, embedData);
+
         return "https://sb-openapi.zalopay.vn/v2/create";
     }
     

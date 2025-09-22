@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface FoodRepository extends JpaRepository<Food, Long> {
@@ -18,4 +19,7 @@ public interface FoodRepository extends JpaRepository<Food, Long> {
 
     Optional<Food> findBySlug(String slug);
 
+    // Thay đổi method để sử dụng trường id thay vì createdAt
+    // ID tăng dần nên có thể sử dụng để lấy món ăn mới nhất
+    List<Food> findTop6ByOrderByIdDesc();
 }

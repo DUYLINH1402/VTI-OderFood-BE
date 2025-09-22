@@ -30,9 +30,12 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // Quan trọng: ép kiểu chính xác về CustomUserDetails
+        // Lấy userId từ CustomUserDetails
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        User user = userDetails.getUser();
+        Long userId = userDetails.getId();
+
+        // Lấy lại User từ database với role được fetch sẵn thay vì dùng detached entity
+        User user = userService.findUserWithRoleById(userId);
 
         UserResponse response = UserResponse.fromEntity(user);
         return ResponseEntity.ok(response);
@@ -42,8 +45,11 @@ public class UserController {
     public ResponseEntity<UserResponse> updateProfile(@RequestBody @Valid UserUpdateRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        User user = userDetails.getUser();
+        Long userId = userDetails.getId(); // Lấy userId thay vì detached entity
 
+        // Lấy user từ database với role được fetch sẵn
+        User user = userService.findUserWithRoleById(userId);
+        
         user.setFullName(request.getFullName());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAddress(request.getAddress());
@@ -58,7 +64,7 @@ public class UserController {
     public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        Long userId = userDetails.getUser().getId();
+        Long userId = userDetails.getId(); // Đã đúng rồi
 
         String imageUrl = userService.uploadAvatar(userId, file);
         return ResponseEntity.ok(imageUrl);
@@ -70,7 +76,9 @@ public class UserController {
             Authentication authentication) {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        userService.changePassword(userDetails.getUser().getId(), request);
+        Long userId = userDetails.getId(); // Lấy userId thay vì detached entity
+        
+        userService.changePassword(userId, request);
         return ResponseEntity.ok("PASSWORD_CHANGED");
     }
 

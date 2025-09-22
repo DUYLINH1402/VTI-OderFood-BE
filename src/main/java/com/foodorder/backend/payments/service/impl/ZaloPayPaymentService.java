@@ -17,6 +17,7 @@ import com.foodorder.backend.payments.dto.response.PaymentStatusResponse;
 import com.foodorder.backend.payments.service.PaymentService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foodorder.backend.points.dto.response.PointsResponseDTO;
 import com.foodorder.backend.points.repository.RewardPointRepository;
 import com.foodorder.backend.points.repository.PointHistoryRepository;
 import com.foodorder.backend.points.service.PointsService;
@@ -35,8 +36,15 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 import com.foodorder.backend.service.BrevoEmailService;
+import com.foodorder.backend.service.WebSocketService;
+import com.foodorder.backend.order.dto.OrderWebSocketMessage;
+import com.foodorder.backend.notifications.service.NotificationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.foodorder.backend.zone.repository.WardRepository;
+import com.foodorder.backend.zone.repository.DistrictRepository;
+import com.foodorder.backend.zone.entity.Ward;
+import com.foodorder.backend.zone.entity.District;
 
 @Service
 public class ZaloPayPaymentService extends BasePaymentService implements PaymentService {
@@ -48,6 +56,10 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
     private final com.foodorder.backend.points.service.PointsService pointsService;
     private final BrevoEmailService brevoEmailService;
     private final TemplateEngine templateEngine;
+    private final WebSocketService webSocketService;
+    private final NotificationHelper notificationHelper;
+    private final WardRepository wardRepository;
+    private final DistrictRepository districtRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final OrderTrackingRepository orderTrackingRepository;
@@ -67,6 +79,9 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
     @Value("${zalopay.callback-url}")
     private String callbackUrl;
 
+    @Value("${zalopay.redirect-url}")
+    private String baseRedirectUrl;
+
     // Constructor để gọi super()
     public ZaloPayPaymentService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
             OrderTrackingRepository orderTrackingRepository,
@@ -75,7 +90,11 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             UserRepository userRepository,
             PointsService pointsService,
             BrevoEmailService brevoEmailService,
-            TemplateEngine templateEngine) {
+            TemplateEngine templateEngine,
+            WebSocketService webSocketService,
+            NotificationHelper notificationHelper,
+            WardRepository wardRepository,
+            DistrictRepository districtRepository) {
         super(orderRepository, orderItemRepository);
         this.orderTrackingRepository = orderTrackingRepository;
         this.rewardPointRepository = rewardPointRepository;
@@ -84,6 +103,10 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
         this.pointsService = pointsService;
         this.brevoEmailService = brevoEmailService;
         this.templateEngine = templateEngine;
+        this.webSocketService = webSocketService;
+        this.notificationHelper = notificationHelper;
+        this.wardRepository = wardRepository;
+        this.districtRepository = districtRepository;
     }
 
     @Override
@@ -123,7 +146,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             }
 
             // Embed data (redirect về trang thank you)
-            String redirectUrl = "http://localhost:5173/thanh-toan/ket-qua?appTransId=" + appTransId;
+            String redirectUrl = baseRedirectUrl + "?appTransId=" + appTransId;
             Map<String, Object> embedData = new HashMap<>();
             embedData.put("redirecturl", redirectUrl);
 
@@ -270,8 +293,36 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             // Trừ điểm và lưu log nếu embedDiscountAmount > 0
             if (embedDiscountAmount != null && embedDiscountAmount > 0) {
                 if (order.getUserId() != null) {
-                    pointsService.usePointsOnOrder(order.getUserId(), orderId, embedDiscountAmount,
-                            "Dùng điểm thanh toán đơn hàng #" + orderId);
+                    try {
+                        // **KIỂM TRA ĐIỂM TRƯỚC KHI TRỪ ĐIỂM TRONG CALLBACK**
+                        User username = userRepository.findById(order.getUserId())
+                            .orElse(null);
+                        if (username != null) {
+                            PointsResponseDTO pointsDTO = pointsService.getCurrentPointsByUsername(username.getUsername());
+                            int currentPoints = pointsDTO != null ? pointsDTO.getAvailablePoints() : 0;
+                            int pointsNeeded = embedDiscountAmount / 1000; // 1 điểm = 1000 VND
+
+                            if (currentPoints >= pointsNeeded) {
+                                // Đủ điểm mới trừ
+                                pointsService.usePointsOnOrder(order.getUserId(), orderId, embedDiscountAmount,
+                                        "Dùng điểm thanh toán đơn hàng #" + orderId);
+                                System.out.println("Successfully deducted " + pointsNeeded + " points from user " + order.getUserId());
+                            } else {
+                                // Không đủ điểm - log warning nhưng vẫn cho thanh toán thành công
+                                System.err.println("INSUFFICIENT_POINTS in callback: User " + order.getUserId() +
+                                    " has " + currentPoints + " points but needs " + pointsNeeded + " points");
+                                // Reset discount amount về 0 để tránh inconsistency
+                                order.setDiscountAmount(0);
+                                orderRepository.save(order);
+                            }
+                        }
+                    } catch (Exception pointsEx) {
+                        // Log lỗi điểm thưởng nhưng không throw exception để không ảnh hưởng callback
+                        System.err.println("Error processing points in callback: " + pointsEx.getMessage());
+                        // Reset discount amount về 0 để tránh inconsistency
+                        order.setDiscountAmount(0);
+                        orderRepository.save(order);
+                    }
                 }
             }
 
@@ -292,7 +343,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
                     String subject = "Đơn hàng của bạn đã thanh toán thành công";
                     Context context = new Context();
                     context.setVariable("fullName", user.getFullName() != null ? user.getFullName() : user.getEmail());
-                    context.setVariable("orderId", orderId);
+                    context.setVariable("orderCode", order.getOrderCode()); // Sử dụng orderCode thay vì orderId
 
                     // Truyền danh sách sản phẩm với format đúng
                     List<Map<String, Object>> orderItems = new ArrayList<>();
@@ -347,6 +398,125 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             // ZaloPay chỉ gửi callback khi thanh toán THÀNH CÔNG
             updateOrderPaymentStatus(orderId, zpTransId, "PAID");
 
+            // ** CẬP NHẬT LOGIC WEBSOCKET VÀ DATABASE NOTIFICATIONS **
+            try {
+                // Lấy lại order đã được cập nhật với đầy đủ thông tin
+                Order updatedOrder = orderRepository.findById(orderId).orElse(null);
+                if (updatedOrder != null) {
+                    // Lấy thông tin Ward và District từ DB
+                    String wardName = null;
+                    String districtName = null;
+                    Long wardId = updatedOrder.getWardId();
+                    Long districtId = updatedOrder.getDistrictId();
+
+                    // Lấy thông tin Ward nếu có wardId
+                    if (wardId != null) {
+                        Ward ward = wardRepository.findById(wardId).orElse(null);
+                        if (ward != null) {
+                            wardName = ward.getName();
+                        }
+                    }
+
+                    // Lấy thông tin District nếu có districtId
+                    if (districtId != null) {
+                        District district = districtRepository.findById(districtId).orElse(null);
+                        if (district != null) {
+                            districtName = district.getName();
+                        }
+                    }
+
+                    // 1. GỬI THÔNG BÁO CHO USER - Thanh toán thành công
+                    if (updatedOrder.getUserId() != null) {
+                        try {
+                            // Lưu thông báo vào database cho user
+                            String totalPriceFormatted = VnCurrencyFormatter.format(
+                                updatedOrder.getTotalPrice() != null ? updatedOrder.getTotalPrice().longValue() : 0
+                            );
+
+                            notificationHelper.createPaymentSuccessNotificationForUser(
+                                updatedOrder.getUserId(),
+                                updatedOrder.getId(),
+                                updatedOrder.getOrderCode(),
+                                totalPriceFormatted
+                            );
+
+                            // Gửi WebSocket notification cho customer về thanh toán thành công
+                            OrderWebSocketMessage customerMessage = OrderWebSocketMessage.customerNotification(
+                                updatedOrder.getId(),
+                                updatedOrder.getOrderCode(),
+                                "PROCESSING", // Trạng thái mới sau thanh toán
+                                "PENDING",    // Trạng thái cũ trước thanh toán
+                                updatedOrder.getUserId()
+                            );
+
+                            webSocketService.sendNotificationToUser(updatedOrder.getUserId(), customerMessage);
+                        } catch (Exception userNotificationEx) {
+                            logger.error("Lỗi khi gửi thông báo cho user {}: {}",
+                                    updatedOrder.getUserId(), userNotificationEx.getMessage());
+                        }
+                    }
+
+                    // 2. GỬI THÔNG BÁO CHO STAFF - Đơn hàng mới cần xử lý
+                    try {
+                        // Lấy danh sách staff đang hoạt động để gửi thông báo
+                        List<User> staffUsers = userRepository.findActiveStaffUsers();
+
+                        // Nếu không có staff hoạt động, lấy admin làm dự phòng
+                        if (staffUsers.isEmpty()) {
+                            logger.warn("Không có staff hoạt động nào, đang thử lấy admin...");
+                            staffUsers = userRepository.findActiveAdminUsers();
+                        }
+                        if (staffUsers.isEmpty()) {
+                            logger.warn("Không có nhân viên hoặc admin nào hoạt động trong hệ thống để gửi thông báo đơn hàng mới");
+                            return "OK"; // Vẫn trả về OK để không ảnh hưởng callback
+                        }
+
+                        String customerName = updatedOrder.getReceiverName() != null
+                            ? updatedOrder.getReceiverName()
+                            : "Khách hàng";
+
+                        // Gửi thông báo cho tất cả staff/admin hoạt động
+                        for (User staff : staffUsers) {
+                            try {
+                                notificationHelper.createNewOrderNotificationForStaff(
+                                    staff.getId(), // Sử dụng userId của staff
+                                    updatedOrder.getId(),
+                                    updatedOrder.getOrderCode(),
+                                    customerName
+                                );
+
+                            } catch (Exception staffNotificationEx) {
+                                logger.error("Lỗi khi tạo thông báo cho nhân viên {}: {}",
+                                        staff.getId(), staffNotificationEx.getMessage(), staffNotificationEx);
+                            }
+                        }
+
+                        // Tạo WebSocket message cho đơn hàng mới với thông tin khu vực đầy đủ - broadcast cho tất cả staff
+                        OrderWebSocketMessage staffMessage = OrderWebSocketMessage.newOrder(
+                            updatedOrder.getId(),
+                            updatedOrder.getOrderCode(),
+                            customerName,
+                            updatedOrder.getReceiverPhone() != null ? updatedOrder.getReceiverPhone() : "",
+                            updatedOrder.getTotalPrice() != null ? updatedOrder.getTotalPrice().doubleValue() : 0.0,
+                            wardId,
+                            wardName,
+                            districtId,
+                            districtName
+                        );
+
+                        // Gửi thông báo WebSocket đến tất cả staff về đơn hàng mới
+                        webSocketService.sendNewOrderNotification(staffMessage);
+                    } catch (Exception staffNotificationEx) {
+                        logger.error("Lỗi khi gửi thông báo cho staff về đơn hàng {}: {}",
+                                updatedOrder.getOrderCode(), staffNotificationEx.getMessage());
+                    }
+
+                }
+            } catch (Exception wsEx) {
+                // Log lỗi WebSocket và Database notification nhưng không throw exception để không ảnh hưởng callback
+                logger.error("Lỗi khi gửi notification cho đơn hàng {}: {}", orderId, wsEx.getMessage());
+            }
+
             return "OK";
 
         } catch (Exception e) {
@@ -367,6 +537,7 @@ public class ZaloPayPaymentService extends BasePaymentService implements Payment
             order.setPaymentTransactionId(transactionId);
 
             // Cập nhật order status thành PROCESSING khi thanh toán thành công
+            // PROCESSING = Đã thanh toán, chờ nhà hàng xác nhận
             if (order.getStatus() == OrderStatus.PENDING) {
                 order.setStatus(OrderStatus.PROCESSING);
             }

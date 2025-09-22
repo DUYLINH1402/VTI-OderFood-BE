@@ -1,5 +1,6 @@
 package com.foodorder.backend.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.foodorder.backend.points.entity.RewardPoint;
 import jakarta.persistence.*;
 import lombok.*;
@@ -40,8 +41,10 @@ public class User {
     @Column(name = "address", length = 255)
     private String address;
 
-    @Column(name = "role", length = 20)
-    private String role;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    @JsonIgnore // Tránh infinite recursion khi serialize JSON
+    private Role role;
 
     @Column(name = "is_active")
     private boolean isActive;
@@ -69,13 +72,54 @@ public class User {
 
         isActive = true; // Mặc định là hoạt động
         isVerified = false; // Chưa xác minh email
-        if (role == null)
-            role = "ROLE_USER"; // Mặc định là người dùng
+        // role sẽ được set từ bên ngoài khi tạo user
     }
 
     // Chạy trước khi UPDATE → cập nhật updatedAt
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Kiểm tra xem user có phải là admin không
+     */
+    public boolean isAdmin() {
+        return role != null && role.isAdmin();
+    }
+
+    /**
+     * Kiểm tra xem user có phải là nhân viên không
+     */
+    public boolean isStaff() {
+        return role != null && role.isStaff();
+    }
+
+    /**
+     * Kiểm tra xem user có phải là khách hàng không
+     */
+    public boolean isCustomer() {
+        return role != null && role.isCustomer();
+    }
+
+    /**
+     * Lấy tên hiển thị của vai trò
+     */
+    public String getRoleDisplayName() {
+        return role != null ? role.getName() : "Khách hàng";
+    }
+
+    /**
+     * Lấy authority string cho Spring Security
+     */
+    public String getRoleAuthority() {
+        return role != null ? role.getAuthority() : "ROLE_CUSTOMER";
+    }
+
+    /**
+     * Lấy code của role
+     */
+    public String getRoleCode() {
+        return role != null ? role.getCode() : "CUSTOMER";
     }
 }

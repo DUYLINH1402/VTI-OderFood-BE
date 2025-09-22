@@ -18,23 +18,31 @@ public class OrderRequest {
     private String receiverEmail;
     private String deliveryAddress;
     private Long shippingZoneId;
-    private PaymentMethod paymentMethod; // Enum
+    private PaymentMethod paymentMethod;
     private DeliveryType deliveryType;
-    private BigDecimal totalPrice;
-    private Integer discountAmount;
+    // === TIỀN TỆ MỚI - RÕ RÀNG ===
+    private BigDecimal subtotalAmount;          // Tổng tiền món ăn (không bao gồm phí ship, chưa trừ giảm giá)
+    private BigDecimal shippingFee;             // Phí giao hàng (nếu có)
+    private BigDecimal totalBeforeDiscount;     // Tổng tiền sau khi cộng phí ship, trước khi áp dụng giảm giá
+    private BigDecimal finalAmount;             // Số tiền cuối cùng khách phải trả (sau tất cả giảm giá)
+    // === GIẢM GIÁ ===
+    private Integer pointsUsed;                 // Số điểm muốn sử dụng
+    private BigDecimal pointsDiscountAmount;    // Số tiền giảm từ điểm thưởng (auto calculated)
+    private String couponCode;                  // Mã coupon user muốn áp dụng
+    private BigDecimal couponDiscountAmount;    // Số tiền giảm từ coupon (auto calculated)
 
-    // === COUPON FIELDS ===
-    private String couponCode; // Mã coupon user muốn áp dụng
-    private BigDecimal couponDiscountAmount; // Số tiền giảm từ coupon (auto calculated)
-    private BigDecimal originalAmount; // Tổng tiền gốc trước khi áp dụng coupon
+    // === DEPRECATED FIELDS - GIỮ LẠI ĐỂ TƯƠNG THÍCH ===
+    @Deprecated
+    private BigDecimal totalPriceBeforeDiscount; // Deprecated: sử dụng subtotalAmount
 
-    public Integer getDiscountAmount() {
-        return discountAmount;
-    }
+    @Deprecated
+    private BigDecimal totalPrice;               // Deprecated: sử dụng finalAmount
 
-    public void setDiscountAmount(Integer discountAmount) {
-        this.discountAmount = discountAmount;
-    }
+    @Deprecated
+    private Integer discountAmount;              // Deprecated: sử dụng pointsUsed
+
+    @Deprecated
+    private BigDecimal originalAmount;           // Deprecated: sử dụng totalBeforeDiscount
 
     private Long districtId;
     private Long wardId;

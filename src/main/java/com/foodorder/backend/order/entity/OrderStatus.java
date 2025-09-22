@@ -1,8 +1,22 @@
 package com.foodorder.backend.order.entity;
-public enum OrderStatus {
-    PENDING,         // Đơn mới tạo, chờ xử lý
-    PROCESSING,      // Đang chuẩn bị/giao hàng
-    COMPLETED,       // Đã giao thành công
-    CANCELLED        // Đã huỷ
-}
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+/**
+ * Enum định nghĩa các trạng thái đơn hàng
+ * Workflow: PENDING -> PROCESSING -> CONFIRMED -> DELIVERING -> COMPLETED
+ */
+@Getter
+@AllArgsConstructor
+public enum OrderStatus {
+    PENDING("PENDING", "Chờ thanh toán"),
+    PROCESSING("PROCESSING", "Đã thanh toán, chờ xác nhận"),
+    CONFIRMED("CONFIRMED", "Đã xác nhận, đang chế biến"),
+    DELIVERING("DELIVERING", "Đang giao hàng"),
+    COMPLETED("COMPLETED", "Hoàn thành"),
+    CANCELLED("CANCELLED", "Đã hủy");
+
+    private final String code;
+    private final String description;
+}

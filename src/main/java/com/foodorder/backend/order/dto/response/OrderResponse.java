@@ -12,36 +12,49 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class OrderResponse {
-    private Long orderId;
+    private Long id; // ID nội bộ
+    private String orderCode; // Mã đơn hàng chính để hiển thị
     private Long userId;
     private DeliveryType deliveryType;
     private String paymentMethod;
     private Long districtId;
+    private String districtName;
     private Long wardId;
+    private String wardName;
     private String deliveryAddress;
     private String receiverName;
     private String receiverPhone;
     private String receiverEmail;
     private String status;
     private String paymentStatus;
-    private BigDecimal totalPrice;
 
-    private Integer discountAmount;
+    // === TIỀN TỆ MỚI - RÕ RÀNG ===
+    private BigDecimal subtotalAmount;          // Tổng tiền món ăn (không bao gồm phí ship, chưa trừ giảm giá)
+    private BigDecimal shippingFee;             // Phí giao hàng (nếu có)
+    private BigDecimal totalBeforeDiscount;     // Tổng tiền sau khi cộng phí ship, trước khi áp dụng giảm giá
+    private BigDecimal finalAmount;             // Số tiền cuối cùng khách phải trả (sau tất cả giảm giá)
 
-    // === THÊM CÁC FIELD CHO COUPON ===
-    private String couponCode; // Mã coupon đã sử dụng
-    private Double couponDiscountAmount; // Số tiền giảm từ coupon
-    private Double originalAmount; // Số tiền gốc trước khi áp dụng coupon
+    // === GIẢM GIÁ ===
+    private Integer pointsUsed;                 // Số điểm đã sử dụng
+    private BigDecimal pointsDiscountAmount;    // Số tiền giảm từ điểm thưởng
+    private String couponCode;                  // Mã coupon đã sử dụng
+    private BigDecimal couponDiscountAmount;    // Số tiền giảm từ coupon
 
-    public Integer getDiscountAmount() {
-        return discountAmount;
-    }
-
-    public void setDiscountAmount(Integer discountAmount) {
-        this.discountAmount = discountAmount;
-    }
+    // === DEPRECATED FIELDS - GIỮ LẠI ĐỂ TƯƠNG THÍCH ===
+    @Deprecated
+    private Integer discountAmount;             // Deprecated: sử dụng pointsUsed thay thế
 
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime paymentTime;
+    private String paymentTransactionId;
+
+    // === MANAGEMENT FIELDS ===
+    private String staffNote; // Ghi chú của nhân viên
+    private String internalNote; // Ghi chú nội bộ
+    private String cancelReason; // Lý do hủy đơn
+    private LocalDateTime cancelledAt; // Thời gian hủy đơn
+
     private List<OrderItemResponse> items;
 
     // Item response lồng trong này luôn cho gọn
