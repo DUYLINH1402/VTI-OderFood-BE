@@ -209,7 +209,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findUserWithRoleById(Long userId) {
         return userRepository.findUserWithRoleById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found", "USER_NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND"));
     }
 
+    @Override
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND"));
+    }
+
+    @Override
+    public User findByUsername(String username) {
+        return userRepository.findUserWithRoleByUsername(username)
+                .orElse(null); // Trả về null thay vì throw exception để WebSocket controller xử lý
+    }
 }

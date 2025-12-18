@@ -1,7 +1,7 @@
 package com.foodorder.backend.chatbot.controller;
 
 import com.foodorder.backend.chatbot.dto.ChatRequestDTO;
-import com.foodorder.backend.chatbot.entity.ChatMessage;
+import com.foodorder.backend.chatbot.entity.ChatbotMessage;
 import com.foodorder.backend.chatbot.service.ChatbotService;
 import com.foodorder.backend.exception.ApiError;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,6 @@ public class ChatbotController {
         try {
             // Lấy user ID nếu đã đăng nhập
             if (authentication != null && request.getUserId() == null) {
-                // TODO: Có thể lấy user ID từ authentication nếu cần
                 log.debug("User đã đăng nhập nhưng chưa set userId trong request");
             }
 
@@ -79,7 +78,7 @@ public class ChatbotController {
                 return ResponseEntity.badRequest().body(apiError);
             }
 
-            List<ChatMessage> history = chatbotService.getChatHistory(sessionId);
+            List<ChatbotMessage> history = chatbotService.getChatHistory(sessionId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", history
@@ -174,33 +173,4 @@ public class ChatbotController {
         ));
     }
 
-    /**
-     * API để test kết nối với OpenAI (chỉ dùng trong development)
-     */
-//    @PostMapping("/test")
-//    public ResponseEntity<?> testChatbot() {
-//        try {
-//            ChatRequestDTO testRequest = new ChatRequestDTO();
-//            testRequest.setMessage("Xin chào!");
-//            testRequest.setSessionId("test_session_" + System.currentTimeMillis());
-//
-//            return chatbotService.processMessage(testRequest)
-//                .map(response -> ResponseEntity.ok(Map.of(
-//                    "success", true,
-//                    "message", "Chatbot hoạt động bình thường",
-//                    "responseMessage", response.getMessage(),
-//                    "responseTime", response.getResponseTime()
-//                )))
-//                .block(); // Block để test đồng bộ
-//
-//        } catch (Exception e) {
-//            log.error("Lỗi khi test chatbot: {}", e.getMessage(), e);
-//            ApiError apiError = ApiError.builder()
-//                .errorCode("CHATBOT_TEST_FAILED")
-//                .message("Chatbot không hoạt động")
-//                .details(e.getMessage())
-//                .build();
-//            return ResponseEntity.internalServerError().body(apiError);
-//        }
-//    }
 }

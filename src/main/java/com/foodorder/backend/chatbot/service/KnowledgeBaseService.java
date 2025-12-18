@@ -26,6 +26,7 @@ public class KnowledgeBaseService {
 
     private final KnowledgeBaseRepository knowledgeBaseRepository;
     private final ModelMapper modelMapper;
+    private final MenuInfoService menuInfoService; // Thêm dependency
 
     /**
      * Tạo mới knowledge base
@@ -170,16 +171,13 @@ public class KnowledgeBaseService {
             // Kiểm tra xem đã có dữ liệu chưa
             long count = knowledgeBaseRepository.count();
             if (count > 0) {
-//                log.info("Knowledge base đã có dữ liệu, bỏ qua khởi tạo mẫu");
                 return;
             }
-
-//            log.info("Khởi tạo dữ liệu mẫu cho knowledge base");
 
             // Thông tin nhà hàng
             createSampleKnowledge(
                 "Giới thiệu nhà hàng",
-                "Chúng tôi là hệ thống nhà hàng trực tuyến chuyên phục vụ các món ăn ngon, chất lượng cao. " +
+                "Nhà hàng thành lập ngày 05/3/2015 chuyên phục vụ các món ăn ngon, chất lượng cao. " +
                 "Với đội ngũ đầu bếp giàu kinh nghiệm và nguyên liệu tươi ngon, chúng tôi cam kết mang đến " +
                 "những trải nghiệm ẩm thực tuyệt vời cho khách hàng.",
                 "nhà hàng, giới thiệu, về chúng tôi, food order",
@@ -233,6 +231,22 @@ public class KnowledgeBaseService {
                 8
             );
 
+            // Khuyến mãi
+            createSampleKnowledge(
+                "Chương trình khuyến mãi",
+                "Các chương trình khuyến mãi hiện tại: " +
+                "- Giảm 20% cho đơn hàng đầu tiên của khách hàng mới " +
+                "- Tích điểm thưởng: 1000 điểm cho mỗi 1,000 VNĐ, đổi điểm lấy voucher " +
+                "- Happy Hour: Giảm 15% từ 14:00-16:00 hàng ngày " +
+                "- Combo tiết kiệm: Mua 2 tặng 1 cho một số món đồ uống " +
+                "- Sinh nhật vui: Giảm 30% trong tuần sinh nhật (có giấy tờ tùy thân) " +
+                "- Khuyến mãi theo mùa và các dịp lễ đặc biệt. " +
+                "Theo dõi fanpage để cập nhật khuyến mãi mới nhất!",
+                "khuyến mãi, giảm giá, voucher, tích điểm, sinh nhật, combo, happy hour",
+                KnowledgeBase.KnowledgeCategory.PROMOTION,
+                8
+            );
+
             // Liên hệ
             createSampleKnowledge(
                 "Thông tin liên hệ",
@@ -259,8 +273,6 @@ public class KnowledgeBaseService {
                 7
             );
 
-//            log.info("Đã khởi tạo xong dữ liệu mẫu cho knowledge base");
-
         } catch (Exception e) {
             log.error("Lỗi khi khởi tạo dữ liệu mẫu: {}", e.getMessage());
         }
@@ -280,5 +292,26 @@ public class KnowledgeBaseService {
                 .build();
 
         knowledgeBaseRepository.save(knowledge);
+    }
+
+    /**
+     * Lấy thông tin thực đơn động từ database
+     */
+    public String getMenuInformation() {
+        return menuInfoService.getMenuOverview();
+    }
+
+    /**
+     * Tìm kiếm món ăn theo từ khóa
+     */
+    public String searchFoods(String keyword) {
+        return menuInfoService.searchFoodsByKeyword(keyword);
+    }
+
+    /**
+     * Lấy món ăn theo danh mục
+     */
+    public String getFoodsByCategory(String categoryName) {
+        return menuInfoService.getFoodsByCategory(categoryName);
     }
 }

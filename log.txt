@@ -1,1 +1,11 @@
-Error creating bean with name 'cartController' defined in file [/Users/user/Documents/ODER_FOOD/backend/target/classes/com/foodorder/backend/cart/CartController.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'cartServiceImpl' defined in file [/Users/user/Documents/ODER_FOOD/backend/target/classes/com/foodorder/backend/cart/service/impl/CartServiceImpl.class]: Unsatisfied dependency expressed through constructor parameter 1: Error creating bean with name 'foodRepository' defined in com.foodorder.backend.food.repository.FoodRepository defined in @EnableJpaRepositories declared on JpaRepositoriesRegistrar.EnableJpaRepositoriesConfiguration: Could not create query for public abstract java.util.List com.foodorder.backend.food.repository.FoodRepository.findTop6ByOrderByCreatedAtDesc(); Reason: Failed to create query for method public abstract java.util.List com.foodorder.backend.food.repository.FoodRepository.findTop6ByOrderByCreatedAtDesc(); No property 'createdAt' found for type 'Food'
+GenerationTarget encountered exception accepting command : Error executing DDL "
+    alter table chat_messages 
+       add constraint FKgiqeap8ays4lf684x7m0r2729 
+       foreign key (sender_id) 
+       references users (id)" via JDBC [Cannot add or update a child row: a foreign key constraint fails (`food_ordering_system`.`#sql-3d6_7e33`, CONSTRAINT `FKgiqeap8ays4lf684x7m0r2729` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`))]
+
+org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "
+    alter table chat_messages 
+       add constraint FKgiqeap8ays4lf684x7m0r2729 
+       foreign key (sender_id) 
+       references users (id)" via JDBC [Cannot add or update a child row: a foreign key constraint fails (`food_ordering_system`.`#sql-3d6_7e33`, CONSTRAINT `FKgiqeap8ays4lf684x7m0r2729` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`))]

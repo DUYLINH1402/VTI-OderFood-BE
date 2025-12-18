@@ -18,4 +18,14 @@ public interface UserService {
      * Lấy User theo ID với Role được fetch sẵn để tránh lỗi lazy loading
      */
     User findUserWithRoleById(Long userId);
+    
+    /**
+     * Tìm User theo ID
+     */
+    User findById(Long id);
+    
+    /**
+     * Tìm User theo username với Role được fetch sẵn
+     */
+    User findByUsername(String username);
 }

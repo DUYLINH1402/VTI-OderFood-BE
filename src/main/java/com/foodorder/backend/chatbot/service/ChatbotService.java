@@ -2,8 +2,8 @@ package com.foodorder.backend.chatbot.service;
 
 import com.foodorder.backend.chatbot.dto.ChatRequestDTO;
 import com.foodorder.backend.chatbot.dto.ChatResponseDTO;
-import com.foodorder.backend.chatbot.entity.ChatMessage;
-import com.foodorder.backend.chatbot.repository.ChatMessageRepository;
+import com.foodorder.backend.chatbot.entity.ChatbotMessage;
+import com.foodorder.backend.chatbot.repository.ChatbotMessageRepository;
 import com.foodorder.backend.food.entity.Food;
 import com.foodorder.backend.food.repository.FoodRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class ChatbotService {
 
     private final OpenAIService openAIService;
     private final RAGService ragService;
-    private final ChatMessageRepository chatMessageRepository;
+    private final ChatbotMessageRepository chatbotMessageRepository;
     private final FoodRepository foodRepository;
 
     @Value("${chatbot.context.max-history:10}")
@@ -51,7 +51,7 @@ public class ChatbotService {
             }
 
             // Lưu tin nhắn của user
-            ChatMessage userMessage = saveUserMessage(request, sessionId);
+            ChatbotMessage userMessage = saveUserMessage(request, sessionId);
 
             // Lấy lịch sử hội thoại
             List<String> conversationHistory = getConversationHistory(sessionId);
@@ -94,13 +94,13 @@ public class ChatbotService {
      */
     private static class ProcessingContext {
         final String sessionId;
-        final ChatMessage userMessage;
+        final ChatbotMessage userMessage;
         final List<String> conversationHistory;
         final String enhancedPrompt;
         final String ragContext;
         final long startTime;
 
-        ProcessingContext(String sessionId, ChatMessage userMessage,
+        ProcessingContext(String sessionId, ChatbotMessage userMessage,
                          List<String> conversationHistory, String enhancedPrompt,
                          String ragContext, long startTime) {
             this.sessionId = sessionId;
@@ -115,16 +115,16 @@ public class ChatbotService {
     /**
      * Lưu tin nhắn của user vào database
      */
-    private ChatMessage saveUserMessage(ChatRequestDTO request, String sessionId) {
-        ChatMessage message = ChatMessage.builder()
+    private ChatbotMessage saveUserMessage(ChatRequestDTO request, String sessionId) {
+        ChatbotMessage message = ChatbotMessage.builder()
                 .sessionId(sessionId)
                 .userId(request.getUserId())
-                .messageType(ChatMessage.MessageType.USER)
+                .messageType(ChatbotMessage.MessageType.USER)
                 .messageContent(request.getMessage())
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return chatMessageRepository.save(message);
+        return chatbotMessageRepository.save(message);
     }
 
     /**
@@ -132,16 +132,16 @@ public class ChatbotService {
      */
     private void saveBotMessage(String sessionId, String content, String contextUsed, Integer responseTime) {
         try {
-            ChatMessage message = ChatMessage.builder()
+            ChatbotMessage message = ChatbotMessage.builder()
                     .sessionId(sessionId)
-                    .messageType(ChatMessage.MessageType.BOT)
+                    .messageType(ChatbotMessage.MessageType.BOT)
                     .messageContent(content)
                     .contextUsed(contextUsed)
                     .responseTime(responseTime)
                     .createdAt(LocalDateTime.now())
                     .build();
 
-            chatMessageRepository.save(message);
+            chatbotMessageRepository.save(message);
         } catch (Exception e) {
             log.error("Lỗi khi lưu tin nhắn bot: {}", e.getMessage());
         }
@@ -152,11 +152,11 @@ public class ChatbotService {
      */
     private List<String> getConversationHistory(String sessionId) {
         try {
-            List<ChatMessage> recentMessages = chatMessageRepository
+            List<ChatbotMessage> recentMessages = chatbotMessageRepository
                 .findRecentMessagesBySessionId(sessionId, PageRequest.of(0, maxHistoryMessages));
 
             return recentMessages.stream()
-                .sorted(Comparator.comparing(ChatMessage::getCreatedAt))
+                .sorted(Comparator.comparing(ChatbotMessage::getCreatedAt))
                 .map(msg -> msg.getMessageType().name() + ": " + msg.getMessageContent())
                 .collect(Collectors.toList());
 
@@ -315,25 +315,31 @@ public class ChatbotService {
                 return null;
             }
 
-            // Lấy một số món ăn mới nhất (dựa theo ID thay vì createdAt)
-            List<Food> popularFoods = foodRepository.findTop6ByOrderByIdDesc();
+            // Sử dụng phương thức mới với JOIN FETCH để eager load category
+            List<Food> popularFoods = foodRepository.findTop6WithCategoryByOrderByIdDesc(PageRequest.of(0, 6));
 
             if (popularFoods.isEmpty()) {
                 return null;
             }
 
             List<ChatResponseDTO.RecommendationDataDTO.ProductRecommendationDTO> recommendations =
-                popularFoods.stream().limit(4).map(food ->
-                    ChatResponseDTO.RecommendationDataDTO.ProductRecommendationDTO.builder()
+                popularFoods.stream().limit(4).map(food -> {
+                    // Category đã được eager load nên an toàn truy cập
+                    String categoryName = food.getCategory() != null ? food.getCategory().getName() : "";
+
+                    // Xử lý price an toàn
+                    double price = food.getPrice() != null ? food.getPrice().doubleValue() : 0.0;
+
+                    return ChatResponseDTO.RecommendationDataDTO.ProductRecommendationDTO.builder()
                         .id(food.getId())
                         .name(food.getName())
                         .description(food.getDescription())
-                        .price(food.getPrice().doubleValue()) // Sửa lỗi chuyển đổi từ BigDecimal sang Double
+                        .price(price)
                         .imageUrl(food.getImageUrl())
-                        .category(food.getCategory() != null ? food.getCategory().getName() : "")
+                        .category(categoryName)
                         .rating(4.5) // Default rating
-                        .build()
-                ).collect(Collectors.toList());
+                        .build();
+                }).collect(Collectors.toList());
 
             return ChatResponseDTO.RecommendationDataDTO.builder()
                 .foods(recommendations)
@@ -380,13 +386,13 @@ public class ChatbotService {
                 return false;
             }
 
-            Optional<ChatMessage> messageOpt = chatMessageRepository.findById(messageId);
+            Optional<ChatbotMessage> messageOpt = chatbotMessageRepository.findById(messageId);
             if (messageOpt.isPresent()) {
-                ChatMessage message = messageOpt.get();
+                ChatbotMessage message = messageOpt.get();
                 if (message.getSessionId().equals(sessionId) &&
-                    message.getMessageType() == ChatMessage.MessageType.BOT) {
+                    message.getMessageType() == ChatbotMessage.MessageType.BOT) {
                     message.setUserRating(rating);
-                    chatMessageRepository.save(message);
+                    chatbotMessageRepository.save(message);
                     return true;
                 }
             }
@@ -401,7 +407,7 @@ public class ChatbotService {
     /**
      * Lấy lịch sử chat của session
      */
-    public List<ChatMessage> getChatHistory(String sessionId) {
-        return chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+    public List<ChatbotMessage> getChatHistory(String sessionId) {
+        return chatbotMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
     }
 }

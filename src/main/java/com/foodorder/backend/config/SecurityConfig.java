@@ -63,11 +63,21 @@ public class SecurityConfig {
                         .requestMatchers("/queue/**").permitAll()
                         .requestMatchers("/ws/staff-orders/**").permitAll()
 
+                        // Chat API endpoints - Phân quyền chi tiết
+                        .requestMatchers(HttpMethod.GET, "/api/chat/history").hasRole("USER")
+                        .requestMatchers(HttpMethod.GET, "/api/chat/unread").hasRole("USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/chat/mark-read/**").hasAnyRole("USER", "STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/chat/staff/all-messages").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/chat/staff/user/*/messages").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/chat/staff/users").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/chat/staff/unread-count").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/chat/admin/statistics").hasRole("ADMIN")
+
                         // Chatbot AI
                         .requestMatchers("/api/chatbot/**").permitAll()
 
                         // Cho phép static resources và test pages
-                        .requestMatchers("/static/**", "/websocket-test.html", "/*.html").permitAll()
+                        .requestMatchers("/static/**").permitAll()
 
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
@@ -141,4 +151,3 @@ public class SecurityConfig {
         return source;
     }
 }
-

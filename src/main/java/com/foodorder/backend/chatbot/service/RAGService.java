@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Service xử lý hệ thống RAG (Retrieval-Augmented Generation)
- * Tìm kiếm và truy xuất thông tin từ knowledge base để cung cấp context cho chatbot
+ * Tìm kiếm và truy xuất thông tin từ knowledge base, Data Base để cung cấp context cho chatbot
  */
 @Service
 @RequiredArgsConstructor
@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class RAGService {
 
     private final KnowledgeBaseRepository knowledgeBaseRepository;
+    private final MenuInfoService menuInfoService; // Thêm dependency
 
     @Value("${chatbot.context.similarity-threshold:0.7}")
     private Double similarityThreshold;
@@ -28,18 +29,20 @@ public class RAGService {
      * Tìm kiếm context phù hợp từ knowledge base cho câu hỏi của user
      */
     public String retrieveRelevantContext(String userMessage) {
-//        log.info("Tìm kiếm context cho tin nhắn: {}", userMessage);
 
         try {
+            // Kiểm tra xem có phải câu hỏi về thực đơn không
+            if (isMenuRelatedQuery(userMessage)) {
+                return getMenuContext(userMessage);
+            }
+
             // Trích xuất từ khóa từ tin nhắn user
             List<String> keywords = extractKeywords(userMessage);
-//            log.info("Từ khóa trích xuất: {}", keywords);
 
             // Tìm kiếm knowledge base với từ khóa
             List<KnowledgeBase> relevantKnowledge = searchKnowledgeBase(keywords);
 
             if (relevantKnowledge.isEmpty()) {
-                log.info("Không tìm thấy context phù hợp");
                 return "";
             }
 
@@ -53,6 +56,88 @@ public class RAGService {
             log.error("Lỗi khi tìm kiếm context: {}", e.getMessage());
             return "";
         }
+    }
+
+    /**
+     * Kiểm tra xem có phải câu hỏi về thực đơn không
+     */
+    private boolean isMenuRelatedQuery(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return false;
+        }
+
+        String lowerMessage = message.toLowerCase();
+
+        // Các từ khóa liên quan đến thực đơn
+        String[] menuKeywords = {
+            "thực đơn", "menu", "món ăn", "món", "đồ ăn", "food",
+            "có món gì", "món nào", "ăn gì", "tìm món", "xem món",
+            "bán gì", "phục vụ gì", "có bán", "danh sách món"
+        };
+
+        for (String keyword : menuKeywords) {
+            if (lowerMessage.contains(keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Lấy context về thực đơn từ MenuInfoService
+     */
+    private String getMenuContext(String userMessage) {
+        try {
+            String menuInfo = menuInfoService.getMenuOverview();
+
+            // Kiểm tra xem có từ khóa tìm kiếm cụ thể không
+            String searchKeyword = extractSearchKeyword(userMessage);
+            if (searchKeyword != null && !searchKeyword.isEmpty()) {
+                String searchResult = menuInfoService.searchFoodsByKeyword(searchKeyword);
+                return "THÔNG TIN THỰC ĐƠN:\n\n" + menuInfo + "\n\n" +
+                       "KẾT QUẢ TÌM KIẾM:\n" + searchResult;
+            }
+
+            return "THÔNG TIN THỰC ĐƠN:\n\n" + menuInfo;
+
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy thông tin thực đơn: {}", e.getMessage());
+            return "THÔNG TIN THỰC ĐƠN:\n\nXin lỗi, hiện tại không thể lấy thông tin thực đơn. Vui lòng liên hệ nhân viên để được hỗ trợ!";
+        }
+    }
+
+    /**
+     * Trích xuất từ khóa tìm kiếm cụ thể từ câu hỏi về thực đơn
+     */
+    private String extractSearchKeyword(String message) {
+        String lowerMessage = message.toLowerCase();
+
+        // Tìm các mẫu câu hỏi có chứa từ khóa tìm kiếm
+        String[] searchPatterns = {
+            "tìm món", "có món", "món nào", "bán món",
+            "phở", "pizza", "cơm", "bún", "bánh", "trà", "cà phê"
+        };
+
+        for (String pattern : searchPatterns) {
+            if (lowerMessage.contains(pattern)) {
+                // Trích xuất từ khóa sau pattern
+                int index = lowerMessage.indexOf(pattern);
+                if (index != -1) {
+                    String after = lowerMessage.substring(index + pattern.length()).trim();
+                    if (!after.isEmpty()) {
+                        // Lấy từ đầu tiên sau pattern
+                        String[] words = after.split("\\s+");
+                        if (words.length > 0 && words[0].length() > 2) {
+                            return words[0];
+                        }
+                    }
+                    return pattern;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -149,7 +234,7 @@ public class RAGService {
         }
 
         StringBuilder contextBuilder = new StringBuilder();
-        contextBuilder.append("THÔNG TIN THAM KHẢO TỪ CƠ SỞ DỮ LIỆU NHÀ HÀNG:\n\n");
+        contextBuilder.append("THAM KHẢO TỪ DỮ LIỆU NHÀ HÀNG:\n\n");
 
         for (int i = 0; i < knowledgeList.size(); i++) {
             KnowledgeBase kb = knowledgeList.get(i);

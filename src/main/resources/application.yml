@@ -50,9 +50,9 @@ zalopay:
   key2: ${ZALOPAY_KEY2}
   endpoint: https://sb-openapi.zalopay.vn/v2/create
   callback-url:  https://dongxanhfoodorder.shop/api/payments/zalopay/callback-flexible
-  redirectUrl:  https://https://dongxanhfood.shop//thanh-toan/ket-qua?appTransId=
+#  redirectUrl:  https://https://dongxanhfood.shop//thanh-toan/ket-qua?appTransId=
 #  callback-url:    https://f7f620ff8181.ngrok-free.app/api/payments/zalopay/callback-flexible
-#  redirectUrl:  http://localhost:5173/thanh-toan/ket-qua?appTransId=
+  redirectUrl:  http://localhost:5173/thanh-toan/ket-qua?appTransId=
 
 # Cấu hình OpenAI cho Chatbot
 openai:

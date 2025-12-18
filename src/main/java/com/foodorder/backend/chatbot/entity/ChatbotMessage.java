@@ -8,12 +8,12 @@ import java.time.LocalDateTime;
  * Entity lưu trữ tin nhắn chat giữa người dùng và chatbot
  */
 @Entity
-@Table(name = "chat_messages")
+@Table(name = "chatbot_messages")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatMessage {
+public class ChatbotMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

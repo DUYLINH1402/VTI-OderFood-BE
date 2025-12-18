@@ -79,3 +79,4 @@ public interface KnowledgeBaseRepository extends JpaRepository<KnowledgeBase, Lo
      */
     Long countByCategoryAndIsActiveTrue(KnowledgeCategory category);
 }
+
