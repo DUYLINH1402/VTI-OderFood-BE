@@ -81,7 +81,16 @@ public class SecurityConfig {
 
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/foods/**").permitAll()
+                        
+                        // FOODS - Phân quyền chi tiết
+                        .requestMatchers(HttpMethod.GET, "/api/foods/management").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/foods/*/status").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/foods").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/foods/upload").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/foods/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/foods/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/foods/**").permitAll() // Public GET cho các API còn lại
+                        
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/combos/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()

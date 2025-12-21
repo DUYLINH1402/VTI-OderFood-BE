@@ -54,6 +54,14 @@ public class Food {
         @Column(name = "is_active")
         private Boolean isActive;
 
+        @Enumerated(EnumType.STRING)
+        @Column(name = "status")
+        private FoodStatus status;
+
+        // Ghi chú lý do thay đổi trạng thái (hết hàng, bảo trì...)
+        @Column(name = "status_note", length = 500)
+        private String statusNote;
+
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "category_id")
         private Category category;

@@ -1,6 +1,8 @@
 package com.foodorder.backend.food.service.impl;
 
+import com.foodorder.backend.food.dto.request.FoodFilterRequest;
 import com.foodorder.backend.food.dto.request.FoodRequest;
+import com.foodorder.backend.food.dto.request.FoodStatusUpdateRequest;
 import com.foodorder.backend.food.dto.response.FoodResponse;
 import com.foodorder.backend.food.dto.response.FoodVariantResponse;
 import com.foodorder.backend.category.entity.Category;
@@ -25,6 +27,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.foodorder.backend.food.entity.FoodStatus;
 
 @Service
 public class FoodServiceImpl implements FoodService {
@@ -49,7 +52,20 @@ public class FoodServiceImpl implements FoodService {
 
     private FoodResponse mapToDto(Food food) {
         FoodResponse response = modelMapper.map(food, FoodResponse.class);
-        response.setCategoryName(food.getCategory().getName());
+
+        // Set category name
+        if (food.getCategory() != null) {
+            response.setCategoryName(food.getCategory().getName());
+        }
+
+        // Map status enum sang String
+        if (food.getStatus() != null) {
+            response.setStatus(food.getStatus().name());
+        }
+
+        // Map statusNote
+        response.setStatusNote(food.getStatusNote());
+
         return response;
     }
 
@@ -205,6 +221,14 @@ public class FoodServiceImpl implements FoodService {
         // Ánh xạ dữ liệu cơ bản
         FoodResponse response = modelMapper.map(food, FoodResponse.class);
 
+        // Map status enum sang String đúng cách
+        if (food.getStatus() != null) {
+            response.setStatus(food.getStatus().name());
+        }
+
+        // Map statusNote
+        response.setStatusNote(food.getStatusNote());
+
         // Lấy ảnh phụ (nếu có)
         List<String> imageUrls = foodImageRepository.findByFoodIdOrderByDisplayOrderAsc(food.getId())
                 .stream()
@@ -229,5 +253,71 @@ public class FoodServiceImpl implements FoodService {
         return response;
     }
 
+    /**
+     * Lấy danh sách món ăn với bộ lọc cho Staff quản lý
+     * Hỗ trợ lọc theo tên, trạng thái, danh mục, trạng thái hoạt động
+     */
+    @Override
+    public Page<FoodResponse> getFoodsWithFilter(FoodFilterRequest filterRequest, Pageable pageable) {
+        // Chuyển đổi status từ String sang FoodStatus enum (nếu có)
+        FoodStatus foodStatus = null;
+        if (filterRequest.getStatus() != null && !filterRequest.getStatus().isEmpty()) {
+            try {
+                foodStatus = FoodStatus.valueOf(filterRequest.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Nếu status không hợp lệ, bỏ qua và không lọc theo status
+                foodStatus = null;
+            }
+        }
+
+        // Gọi repository với các tham số lọc
+        Page<Food> foods = foodRepository.findWithFilter(
+                filterRequest.getName(),
+                foodStatus,
+                filterRequest.getCategoryId(),
+                filterRequest.getIsActive(),
+                pageable
+        );
+
+        // Map từ Page<Food> sang Page<FoodResponse>
+        return foods.map(this::mapToDto);
+    }
+
+    /**
+     * Cập nhật trạng thái món ăn (dành cho Staff)
+     * Cho phép thay đổi status (AVAILABLE/UNAVAILABLE) hoặc isActive
+     */
+    @Override
+    public FoodResponse updateFoodStatus(Long id, FoodStatusUpdateRequest request) {
+        // Tìm món ăn theo ID
+        Food food = foodRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND"));
+
+        // Cập nhật status nếu có
+        if (request.getStatus() != null && !request.getStatus().isEmpty()) {
+            try {
+                FoodStatus newStatus = FoodStatus.valueOf(request.getStatus().toUpperCase());
+                food.setStatus(newStatus);
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("INVALID_STATUS", "Trạng thái không hợp lệ. Chỉ chấp nhận: AVAILABLE, UNAVAILABLE");
+            }
+        }
+
+        // Cập nhật isActive nếu có
+        if (request.getIsActive() != null) {
+            food.setIsActive(request.getIsActive());
+        }
+
+        // Cập nhật ghi chú trạng thái nếu có
+        if (request.getStatusNote() != null) {
+            food.setStatusNote(request.getStatusNote());
+        }
+
+        // Lưu thay đổi
+        Food updatedFood = foodRepository.save(food);
+
+        // Trả về response
+        return mapToDto(updatedFood);
+    }
 
 }

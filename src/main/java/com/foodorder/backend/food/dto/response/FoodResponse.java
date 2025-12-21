@@ -20,6 +20,9 @@ public class FoodResponse {
     private Boolean isBestSeller;
     private Boolean isNew;
     private Boolean isFeatured;
+    private String status;
+    // Ghi chú lý do thay đổi trạng thái (hết hàng, bảo trì...)
+    private String statusNote;
     private String slug;
     private List<String> images;
     private List<FoodVariantResponse> variants;
