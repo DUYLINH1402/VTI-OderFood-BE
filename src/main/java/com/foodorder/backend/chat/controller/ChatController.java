@@ -5,6 +5,11 @@ import com.foodorder.backend.chat.service.ChatService;
 import com.foodorder.backend.security.JwtUtil;
 import com.foodorder.backend.user.entity.User;
 import com.foodorder.backend.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,27 +28,31 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * REST Controller cho Chat Management
+ * REST Controller cho Chat Management - Giao tiếp giữa User và Staff
  */
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
+@Tag(name = "Chat", description = "API chat giữa User và Staff")
 public class ChatController {
 
     private final ChatService chatService;
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
-    /**
-     * Lấy lịch sử chat của user hiện tại
-     */
+    @Operation(summary = "Lịch sử chat (User)", description = "Lấy lịch sử chat của user hiện tại.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "401", description = "Chưa đăng nhập")
+    })
     @GetMapping("/history")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getChatHistory(@RequestParam(defaultValue = "0") int page,
-                                          @RequestParam(defaultValue = "20") int size,
-                                          HttpServletRequest request) {
+    public ResponseEntity<?> getChatHistory(
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             User currentUser = getCurrentUser(request);
             Pageable pageable = PageRequest.of(page, size);
@@ -69,12 +78,12 @@ public class ChatController {
         }
     }
 
-    /**
-     * Lấy tin nhắn chưa đọc của user hiện tại
-     */
+    @Operation(summary = "Tin nhắn chưa đọc (User)", description = "Lấy danh sách tin nhắn chưa đọc của user hiện tại.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/unread")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getUnreadMessages(HttpServletRequest request) {
+    public ResponseEntity<?> getUnreadMessages(
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             User currentUser = getCurrentUser(request);
             List<ChatMessageResponse> unreadMessages = chatService.getUnreadMessagesForUser(currentUser);
@@ -93,13 +102,16 @@ public class ChatController {
         }
     }
 
-    /**
-     * Đánh dấu tin nhắn đã đọc
-     */
+    @Operation(summary = "Đánh dấu đã đọc", description = "Đánh dấu một tin nhắn là đã đọc.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy tin nhắn")
+    })
     @PutMapping("/mark-read/{messageId}")
     @PreAuthorize("hasAnyRole('USER', 'STAFF', 'ADMIN')")
-    public ResponseEntity<?> markMessageAsRead(@PathVariable String messageId,
-                                             HttpServletRequest request) {
+    public ResponseEntity<?> markMessageAsRead(
+            @Parameter(description = "ID tin nhắn") @PathVariable String messageId,
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             chatService.markMessageAsRead(messageId);
 
@@ -119,14 +131,14 @@ public class ChatController {
 
     // ========== STAFF/ADMIN ENDPOINTS ==========
 
-    /**
-     * Lấy tất cả tin nhắn từ user gửi cho staff
-     */
+    @Operation(summary = "Tất cả tin nhắn (Staff)", description = "Lấy tất cả tin nhắn từ user gửi cho staff.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/staff/all-messages")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<?> getAllUserToStaffMessages(@RequestParam(defaultValue = "0") int page,
-                                                     @RequestParam(defaultValue = "20") int size,
-                                                     HttpServletRequest request) {
+    public ResponseEntity<?> getAllUserToStaffMessages(
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             Page<ChatMessageResponse> messages = chatService.getAllUserToStaffMessages(pageable);
@@ -153,12 +165,18 @@ public class ChatController {
     /**
      * Lấy tin nhắn từ user cụ thể
      */
+    @Operation(summary = "Tin nhắn của user (Staff)", description = "Lấy tin nhắn từ một user cụ thể.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy user")
+    })
     @GetMapping("/staff/user/{userId}/messages")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<?> getUserMessages(@PathVariable Long userId,
-                                           @RequestParam(defaultValue = "0") int page,
-                                           @RequestParam(defaultValue = "20") int size,
-                                           HttpServletRequest request) {
+    public ResponseEntity<?> getUserMessages(
+            @Parameter(description = "ID của user") @PathVariable Long userId,
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "20") int size,
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             User user = userService.findById(userId);
             if (user == null) {
@@ -232,10 +250,16 @@ public class ChatController {
     /**
      * Kiểm tra xem tin nhắn từ khách hàng cụ thể đã được đọc hết hay chưa và con số cụ thể
      */
+    @Operation(summary = "Trạng thái đọc tin nhắn (Staff)", description = "Kiểm tra số tin nhắn chưa đọc từ một user cụ thể.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy user")
+    })
     @GetMapping("/staff/user/{userId}/read-status")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<?> getUserMessageReadStatus(@PathVariable Long userId,
-                                                    HttpServletRequest request) {
+    public ResponseEntity<?> getUserMessageReadStatus(
+            @Parameter(description = "ID của user") @PathVariable Long userId,
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             User user = userService.findById(userId);
             if (user == null) {
@@ -269,9 +293,12 @@ public class ChatController {
     /**
      * Lấy số tin nhắn chưa đọc từ tất cả user
      */
+    @Operation(summary = "Số tin nhắn chưa đọc (Staff)", description = "Lấy tổng số tin nhắn chưa đọc từ tất cả user.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/staff/unread-count")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<?> getUnreadCount(HttpServletRequest request) {
+    public ResponseEntity<?> getUnreadCount(
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             Long unreadCount = chatService.countUnreadUserToStaffMessages();
 
@@ -291,9 +318,12 @@ public class ChatController {
     /**
      * Lấy danh sách user đã chat với staff
      */
+    @Operation(summary = "Danh sách user đã chat (Staff)", description = "Lấy danh sách tất cả user đã chat với staff.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/staff/users")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
-    public ResponseEntity<?> getUsersChatWithStaff(HttpServletRequest request) {
+    public ResponseEntity<?> getUsersChatWithStaff(
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             List<User> users = chatService.getUsersChatWithStaff();
 
@@ -332,11 +362,14 @@ public class ChatController {
     /**
      * Lấy thống kê chat trong khoảng thời gian
      */
+    @Operation(summary = "Thống kê chat (Admin)", description = "Lấy thống kê chat trong khoảng thời gian cụ thể.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/admin/statistics")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getChatStatistics(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-                                             HttpServletRequest request) {
+    public ResponseEntity<?> getChatStatistics(
+            @Parameter(description = "Ngày bắt đầu") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @Parameter(description = "Ngày kết thúc") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @Parameter(hidden = true) HttpServletRequest request) {
         try {
             List<ChatMessageResponse> messages = chatService.getMessagesBetweenDates(startDate, endDate);
 

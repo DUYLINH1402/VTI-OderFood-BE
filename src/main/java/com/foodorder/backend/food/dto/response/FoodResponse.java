@@ -14,14 +14,14 @@ public class FoodResponse {
     private String description;
     private Double price;
     private String imageUrl;
-    private String categoryName; // Nếu có category
+    private String categoryName;
     private Long categoryId;
     private Long parentId;
     private Boolean isBestSeller;
     private Boolean isNew;
     private Boolean isFeatured;
     private String status;
-    // Ghi chú lý do thay đổi trạng thái (hết hàng, bảo trì...)
+    private Integer totalSold;
     private String statusNote;
     private String slug;
     private List<String> images;

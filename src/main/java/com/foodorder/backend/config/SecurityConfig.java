@@ -6,9 +6,11 @@ import com.foodorder.backend.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,11 +44,34 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * SecurityFilterChain riêng cho Swagger - KHÔNG áp dụng bất kỳ security nào
+     * Order = 1 để được xử lý TRƯỚC filterChain chính
+     */
     @Bean
+    @Order(1)
+    public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(
+                        "/swagger-ui/**",       // Quan trọng: Phải có /**
+                        "/v3/api-docs/**",      // Khớp với springdoc.api-docs.path
+                        "/v3/api-docs",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // Cấu hình xử lý lỗi authentication và authorization
@@ -56,7 +81,6 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép tất cả WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/app/**").permitAll()     // STOMP destination prefix
                         .requestMatchers("/topic/**").permitAll()   // Message broker topics
@@ -78,6 +102,7 @@ public class SecurityConfig {
 
                         // Cho phép static resources và test pages
                         .requestMatchers("/static/**").permitAll()
+
 
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()

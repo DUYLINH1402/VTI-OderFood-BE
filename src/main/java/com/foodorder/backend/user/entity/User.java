@@ -113,13 +113,13 @@ public class User {
      * Lấy authority string cho Spring Security
      */
     public String getRoleAuthority() {
-        return role != null ? role.getAuthority() : "ROLE_CUSTOMER";
+        return role != null ? role.getAuthority() : "ROLE_USER";
     }
 
     /**
      * Lấy code của role
      */
     public String getRoleCode() {
-        return role != null ? role.getCode() : "CUSTOMER";
+        return role != null ? role.getCode() : "USER";
     }
 }

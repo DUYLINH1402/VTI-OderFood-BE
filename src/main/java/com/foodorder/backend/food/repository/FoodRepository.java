@@ -5,8 +5,10 @@ import com.foodorder.backend.food.entity.FoodStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,10 +40,10 @@ public interface FoodRepository extends JpaRepository<Food, Long> {
      * Hỗ trợ lọc theo: tên, trạng thái, danh mục, trạng thái hoạt động
      */
     @Query("SELECT f FROM Food f LEFT JOIN FETCH f.category " +
-           "WHERE (:name IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-           "AND (:status IS NULL OR f.status = :status) " +
-           "AND (:categoryId IS NULL OR f.category.id = :categoryId) " +
-           "AND (:isActive IS NULL OR f.isActive = :isActive)")
+            "WHERE (:name IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:status IS NULL OR f.status = :status) " +
+            "AND (:categoryId IS NULL OR f.category.id = :categoryId) " +
+            "AND (:isActive IS NULL OR f.isActive = :isActive)")
     Page<Food> findWithFilter(
             @Param("name") String name,
             @Param("status") FoodStatus status,
@@ -53,13 +55,19 @@ public interface FoodRepository extends JpaRepository<Food, Long> {
      * Đếm số lượng món ăn theo bộ lọc (dùng cho phân trang)
      */
     @Query("SELECT COUNT(f) FROM Food f " +
-           "WHERE (:name IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
-           "AND (:status IS NULL OR f.status = :status) " +
-           "AND (:categoryId IS NULL OR f.category.id = :categoryId) " +
-           "AND (:isActive IS NULL OR f.isActive = :isActive)")
+            "WHERE (:name IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :name, '%'))) " +
+            "AND (:status IS NULL OR f.status = :status) " +
+            "AND (:categoryId IS NULL OR f.category.id = :categoryId) " +
+            "AND (:isActive IS NULL OR f.isActive = :isActive)")
     long countWithFilter(
             @Param("name") String name,
             @Param("status") FoodStatus status,
             @Param("categoryId") Long categoryId,
             @Param("isActive") Boolean isActive);
+
+    // Thêm phương thức để tăng totalSold cho món ăn theo foodId
+    @Modifying
+    @Transactional
+    @Query("UPDATE Food f SET f.totalSold = COALESCE(f.totalSold, 0) + :amount WHERE f.id = :foodId")
+    void incrementTotalSold(@Param("foodId") Long foodId, @Param("amount") Integer amount);
 }

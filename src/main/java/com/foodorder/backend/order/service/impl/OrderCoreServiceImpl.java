@@ -5,10 +5,13 @@ import com.foodorder.backend.order.dto.response.OrderResponse;
 import com.foodorder.backend.order.dto.response.OrderStatisticsResponse;
 import com.foodorder.backend.order.dto.response.PageResponse;
 import com.foodorder.backend.order.entity.Order;
+import com.foodorder.backend.order.entity.OrderItem;
 import com.foodorder.backend.order.entity.OrderStatus;
 import com.foodorder.backend.order.repository.OrderRepository;
+import com.foodorder.backend.order.repository.OrderItemRepository;
 import com.foodorder.backend.order.service.OrderCoreService;
 import com.foodorder.backend.order.util.OrderMapper;
+import com.foodorder.backend.food.repository.FoodRepository;
 import com.foodorder.backend.exception.ResourceNotFoundException;
 import com.foodorder.backend.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,8 @@ public class OrderCoreServiceImpl implements OrderCoreService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final OrderItemRepository orderItemRepository;
+    private final FoodRepository foodRepository;
 
     @Override
     public Order findOrderByIdWithValidation(Long orderId) {
@@ -153,10 +158,35 @@ public class OrderCoreServiceImpl implements OrderCoreService {
 
         Order savedOrder = orderRepository.save(order);
 
+        // Cập nhật totalSold cho các món ăn khi đơn hàng hoàn thành
+        if (newStatus == OrderStatus.COMPLETED && oldStatus != OrderStatus.COMPLETED) {
+            updateFoodTotalSold(savedOrder.getId());
+        }
+
         // Gửi notification
         sendOrderStatusNotification(savedOrder, oldStatus);
 
         return savedOrder;
+    }
+
+    /**
+     * Cập nhật totalSold cho các món ăn trong đơn hàng đã hoàn thành
+     * Được gọi khi đơn hàng chuyển sang trạng thái COMPLETED
+     * @param orderId ID của đơn hàng
+     */
+    private void updateFoodTotalSold(Long orderId) {
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(orderId);
+
+        for (OrderItem item : orderItems) {
+            if (item.getFoodId() != null && item.getQuantity() != null && item.getQuantity() > 0) {
+                foodRepository.incrementTotalSold(item.getFoodId(), item.getQuantity());
+                log.info("Đã cập nhật totalSold cho món ăn ID: {} với số lượng: {}",
+                        item.getFoodId(), item.getQuantity());
+            }
+        }
+
+        log.info("Đã cập nhật totalSold cho {} món ăn trong đơn hàng ID: {}",
+                orderItems.size(), orderId);
     }
 
     @Override

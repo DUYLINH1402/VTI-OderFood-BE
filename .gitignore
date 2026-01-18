@@ -36,3 +36,8 @@ build/
 .vscode/
 src/main/resources/application-local.yml
 .env
+build.txt
+Lightsail.txt
+log.txt
+NOTES.txt
+RenewSSL_By_AWC_EC2.txt

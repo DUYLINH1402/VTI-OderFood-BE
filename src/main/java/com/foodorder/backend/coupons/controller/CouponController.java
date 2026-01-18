@@ -7,6 +7,11 @@ import com.foodorder.backend.coupons.dto.response.CouponResponse;
 import com.foodorder.backend.coupons.entity.CouponStatus;
 import com.foodorder.backend.coupons.service.CouponService;
 import com.foodorder.backend.security.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +35,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/coupons")
 @Validated
+@Tag(name = "Coupons", description = "API quản lý mã giảm giá")
 public class CouponController {
 
     @Autowired
@@ -37,70 +43,77 @@ public class CouponController {
 
     // === QUẢN LÝ COUPON CƠ BẢN (ADMIN) ===
 
-    /**
-     * Tạo mới coupon
-     * POST /api/coupons
-     */
+    @Operation(summary = "Tạo mới coupon (Admin)", description = "Tạo mã giảm giá mới.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Tạo thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền Admin")
+    })
     @PostMapping
     public ResponseEntity<CouponResponse> createCoupon(@RequestBody @Valid CouponRequest request) {
         CouponResponse response = couponService.createCoupon(request);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Cập nhật coupon
-     * PUT /api/coupons/{id}
-     */
+    @Operation(summary = "Cập nhật coupon (Admin)", description = "Cập nhật thông tin mã giảm giá.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cập nhật thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy coupon")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<CouponResponse> updateCoupon(
-            @PathVariable Long id,
+            @Parameter(description = "ID của coupon") @PathVariable Long id,
             @RequestBody @Valid CouponRequest request) {
         CouponResponse response = couponService.updateCoupon(id, request);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Xóa coupon (soft delete)
-     * DELETE /api/coupons/{id}
-     */
+    @Operation(summary = "Xóa coupon (Admin)", description = "Xóa mã giảm giá (soft delete).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Xóa thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy coupon")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCoupon(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCoupon(
+            @Parameter(description = "ID của coupon") @PathVariable Long id) {
         couponService.deleteCoupon(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Lấy thông tin coupon theo ID
-     * GET /api/coupons/{id}
-     */
+    @Operation(summary = "Chi tiết coupon (ID)", description = "Lấy thông tin chi tiết mã giảm giá theo ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy coupon")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<CouponResponse> getCouponById(@PathVariable Long id) {
+    public ResponseEntity<CouponResponse> getCouponById(
+            @Parameter(description = "ID của coupon") @PathVariable Long id) {
         return couponService.getCouponById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Lấy thông tin coupon theo code
-     * GET /api/coupons/code/{code}
-     */
+    @Operation(summary = "Chi tiết coupon (Code)", description = "Lấy thông tin chi tiết mã giảm giá theo mã code.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy coupon")
+    })
     @GetMapping("/code/{code}")
-    public ResponseEntity<CouponResponse> getCouponByCode(@PathVariable String code) {
+    public ResponseEntity<CouponResponse> getCouponByCode(
+            @Parameter(description = "Mã code của coupon") @PathVariable String code) {
         return couponService.getCouponByCode(code)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Lấy danh sách tất cả coupon với phân trang
-     * GET /api/coupons?page=0&size=10&sort=createdAt,desc
-     */
+    @Operation(summary = "Danh sách tất cả coupon", description = "Lấy danh sách tất cả mã giảm giá với phân trang.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping
     public ResponseEntity<Page<CouponResponse>> getAllCoupons(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Trường sắp xếp") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Hướng sắp xếp") @RequestParam(defaultValue = "desc") String sortDir) {
 
         Pageable pageable = PageRequest.of(page, size,
                 sortDir.equalsIgnoreCase("desc")
@@ -111,32 +124,30 @@ public class CouponController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy danh sách coupon theo trạng thái
-     * GET /api/coupons/status/{status}
-     */
+    @Operation(summary = "Danh sách coupon theo trạng thái", description = "Lấy danh sách mã giảm giá theo trạng thái.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<CouponResponse>> getCouponsByStatus(@PathVariable CouponStatus status) {
+    public ResponseEntity<List<CouponResponse>> getCouponsByStatus(
+            @Parameter(description = "Trạng thái coupon") @PathVariable CouponStatus status) {
         List<CouponResponse> response = couponService.getCouponsByStatus(status);
         return ResponseEntity.ok(response);
     }
 
     // === API CHO USER (PUBLIC) ===
 
-    /**
-     * Lấy danh sách coupon công khai đang hoạt động
-     * GET /api/coupons/public/active
-     */
+    @Operation(summary = "Danh sách coupon công khai", description = "Lấy danh sách mã giảm giá công khai đang hoạt động.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/public/active")
     public ResponseEntity<List<CouponResponse>> getActivePublicCoupons() {
         List<CouponResponse> response = couponService.getActivePublicCoupons();
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy danh sách coupon available cho user hiện tại (từ token)
-     * GET /api/coupons/available
-     */
+    @Operation(summary = "Coupon khả dụng cho user", description = "Lấy danh sách mã giảm giá mà user hiện tại có thể sử dụng.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "401", description = "Chưa đăng nhập")
+    })
     @GetMapping("/available")
     public ResponseEntity<List<CouponResponse>> getAvailableCouponsForCurrentUser() {
         // Lấy thông tin user từ token
@@ -148,13 +159,14 @@ public class CouponController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Validate coupon cho đơn hàng (không áp dụng thực tế)
-     * POST /api/coupons/validate
-     */
+    @Operation(summary = "Kiểm tra coupon", description = "Kiểm tra tính hợp lệ của mã giảm giá cho đơn hàng (không áp dụng thực tế).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công - Trả về kết quả kiểm tra")
+    })
     @PostMapping("/validate")
-    public ResponseEntity<CouponApplyResult> validateCoupon(@RequestBody @Valid ApplyCouponRequest request,
-            Authentication authentication) {
+    public ResponseEntity<CouponApplyResult> validateCoupon(
+            @RequestBody @Valid ApplyCouponRequest request,
+            @Parameter(hidden = true) Authentication authentication) {
         // Lấy userId từ SecurityContext nếu đã đăng nhập
         if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
             try {
@@ -172,10 +184,11 @@ public class CouponController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Áp dụng coupon vào đơn hàng (tính toán giảm giá)
-     * POST /api/coupons/apply
-     */
+    @Operation(summary = "Áp dụng coupon", description = "Áp dụng mã giảm giá vào đơn hàng và tính toán số tiền giảm.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công - Trả về kết quả giảm giá"),
+            @ApiResponse(responseCode = "400", description = "Coupon không hợp lệ")
+    })
     @PostMapping("/apply")
     public ResponseEntity<CouponApplyResult> applyCoupon(@RequestBody @Valid ApplyCouponRequest request) {
         CouponApplyResult result = couponService.applyCouponToOrder(request);

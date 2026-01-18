@@ -4,6 +4,11 @@ import com.foodorder.backend.coupons.dto.response.CouponApplyResult;
 import com.foodorder.backend.order.dto.request.OrderItemRequest;
 import com.foodorder.backend.order.entity.OrderItem;
 import com.foodorder.backend.order.service.OrderCouponService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,15 +25,17 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/orders/coupon")
 @Slf4j
+@Tag(name = "Order Coupons", description = "API áp dụng mã giảm giá cho đơn hàng")
 public class OrderCouponController {
 
     @Autowired
     private OrderCouponService orderCouponService;
 
-    /**
-     * Preview coupon discount cho đơn hàng
-     * POST /api/v1/orders/coupon/preview
-     */
+    @Operation(summary = "Preview giảm giá coupon", description = "Xem trước số tiền giảm giá khi áp dụng coupon cho đơn hàng.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "400", description = "Coupon không hợp lệ")
+    })
     @PostMapping("/preview")
     public ResponseEntity<CouponApplyResult> previewCouponDiscount(
             @RequestBody Map<String, Object> request) {
@@ -59,16 +66,17 @@ public class OrderCouponController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * Validate coupon cho mobile app (simplified version)
-     * GET /api/v1/orders/coupon/validate?code=SAVE20&userId=1&amount=150000&foodIds=1,2,3
-     */
+    @Operation(summary = "Validate coupon (simple)", description = "Validate coupon cho mobile app - phiên bản đơn giản.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "400", description = "Coupon không hợp lệ")
+    })
     @GetMapping("/validate")
     public ResponseEntity<CouponApplyResult> validateCoupon(
-            @RequestParam String code,
-            @RequestParam Long userId,
-            @RequestParam Double amount,
-            @RequestParam(required = false) String foodIds) {
+            @Parameter(description = "Mã coupon") @RequestParam String code,
+            @Parameter(description = "ID người dùng") @RequestParam Long userId,
+            @Parameter(description = "Tổng tiền đơn hàng") @RequestParam Double amount,
+            @Parameter(description = "Danh sách ID món ăn (cách nhau bởi dấu phẩy)") @RequestParam(required = false) String foodIds) {
 
         log.info("Validating coupon {} for user {} with amount {}", code, userId, amount);
 
@@ -92,16 +100,17 @@ public class OrderCouponController {
         return ResponseEntity.ok(result);
     }
 
-    /**
-     * API để admin/system confirm coupon usage sau khi order thành công
-     * POST /api/v1/orders/coupon/confirm-usage
-     */
+    @Operation(summary = "Xác nhận sử dụng coupon", description = "API cho admin/system xác nhận sử dụng coupon sau khi đơn hàng thành công.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Xác nhận thành công"),
+            @ApiResponse(responseCode = "400", description = "Lỗi xác nhận")
+    })
     @PostMapping("/confirm-usage")
     public ResponseEntity<Map<String, String>> confirmCouponUsage(
-            @RequestParam Long orderId,
-            @RequestParam String couponCode,
-            @RequestParam Long userId,
-            @RequestParam Double discountAmount) {
+            @Parameter(description = "ID đơn hàng") @RequestParam Long orderId,
+            @Parameter(description = "Mã coupon") @RequestParam String couponCode,
+            @Parameter(description = "ID người dùng") @RequestParam Long userId,
+            @Parameter(description = "Số tiền giảm giá") @RequestParam Double discountAmount) {
 
         log.info("Confirming coupon usage: order={}, coupon={}, user={}, discount={}",
                 orderId, couponCode, userId, discountAmount);

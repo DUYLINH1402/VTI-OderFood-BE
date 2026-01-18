@@ -51,20 +51,32 @@ public class OrderMapper {
                 .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null)
                 .deliveryType(order.getDeliveryType())
                 .status(order.getStatus() != null ? order.getStatus().name() : null)
+                // === TIỀN TỆ MỚI ===
+                .subtotalAmount(order.getSubtotalAmount())
+                .shippingFee(order.getShippingFee())
+                .totalBeforeDiscount(order.getTotalBeforeDiscount() != null ? order.getTotalBeforeDiscount() : order.getOriginalAmount())
                 .finalAmount(order.getFinalAmount())
-                .discountAmount(order.getDiscountAmount())
+                // === GIẢM GIÁ ===
+                .pointsUsed(order.getPointsUsed())
+                .pointsDiscountAmount(order.getPointsDiscountAmount())
                 .couponCode(order.getCouponCode())
                 .couponDiscountAmount(order.getCouponDiscountAmount())
-                .totalBeforeDiscount(order.getOriginalAmount())
+                .discountAmount(order.getDiscountAmount())
+                // === THỜI GIAN ===
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                // === ĐỊA CHỈ ===
                 .districtId(order.getDistrictId())
                 .districtName(districtName)
                 .wardId(order.getWardId())
                 .wardName(wardName)
+                // === THANH TOÁN ===
                 .paymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null)
                 .paymentTime(order.getPaymentTime())
                 .paymentTransactionId(order.getPaymentTransactionId())
+                // === MANAGEMENT FIELDS ===
+                .staffNote(order.getStaffNote())
+                .internalNote(order.getInternalNote())
                 .cancelReason(order.getCancelReason())
                 .cancelledAt(order.getCancelledAt())
                 .items(itemResponses)
@@ -179,20 +191,32 @@ public class OrderMapper {
                 .paymentMethod(order.getPaymentMethod() != null ? order.getPaymentMethod().name() : null)
                 .deliveryType(order.getDeliveryType())
                 .status(order.getStatus() != null ? order.getStatus().name() : null)
+                // === TIỀN TỆ MỚI ===
+                .subtotalAmount(order.getSubtotalAmount())
+                .shippingFee(order.getShippingFee())
+                .totalBeforeDiscount(order.getTotalBeforeDiscount() != null ? order.getTotalBeforeDiscount() : order.getOriginalAmount())
                 .finalAmount(order.getFinalAmount())
-                .discountAmount(order.getDiscountAmount())
+                // === GIẢM GIÁ ===
+                .pointsUsed(order.getPointsUsed())
+                .pointsDiscountAmount(order.getPointsDiscountAmount())
                 .couponCode(order.getCouponCode())
                 .couponDiscountAmount(order.getCouponDiscountAmount())
-                .totalBeforeDiscount(order.getOriginalAmount())
+                .discountAmount(order.getDiscountAmount())
+                // === THỜI GIAN ===
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
+                // === ĐỊA CHỈ ===
                 .districtId(order.getDistrictId())
                 .districtName(districtName)
                 .wardId(order.getWardId())
                 .wardName(wardName)
+                // === THANH TOÁN ===
                 .paymentStatus(order.getPaymentStatus() != null ? order.getPaymentStatus().name() : null)
                 .paymentTime(order.getPaymentTime())
                 .paymentTransactionId(order.getPaymentTransactionId())
+                // === MANAGEMENT FIELDS ===
+                .staffNote(order.getStaffNote())
+                .internalNote(order.getInternalNote())
                 .cancelReason(order.getCancelReason())
                 .cancelledAt(order.getCancelledAt())
                 .items(itemResponses)

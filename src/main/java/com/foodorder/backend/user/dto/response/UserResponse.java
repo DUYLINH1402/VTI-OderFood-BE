@@ -19,7 +19,6 @@ public class UserResponse {
     private String avatarUrl;
     private String address;
     private String token;
-//    private String role;
 private String roleCode; // Trả về code của role (ROLE_ADMIN, ROLE_STAFF...)
     private String roleName; // Trả về tên hiển thị của role (Quản trị viên, Nhân viên...)
     private boolean isActive;
@@ -41,7 +40,6 @@ private String roleCode; // Trả về code của role (ROLE_ADMIN, ROLE_STAFF..
                 .address(user.getAddress())
                 .roleCode(user.getRole() != null ? user.getRole().getCode() : null)
                 .roleName(user.getRole() != null ? user.getRole().getName() : null)
-//                .role(user.getRole() != null ? user.getRole().getAuthority() : "ROLE_CUSTOMER") // Mặc định là ROLE_CUSTOMER nếu không có role
                 .isActive(user.isActive())
                 .isVerified(user.isVerified())
                 .point(balance)

@@ -24,7 +24,7 @@ public class Role {
     private Long id;
 
     @Column(name = "code", nullable = false, unique = true, length = 20)
-    private String code; // CUSTOMER, STAFF, ADMIN
+    private String code; // , STAFF, ADMIN
 
     @Column(name = "name", nullable = false, length = 50)
     private String name; // Khách hàng, Nhân viên, Quản trị viên
@@ -60,7 +60,7 @@ public class Role {
      * Kiểm tra xem có phải role customer không
      */
     public boolean isCustomer() {
-        return "ROLE_CUSTOMER".equals(code);
+        return "ROLE_USER".equals(code);
     }
 
     @Override

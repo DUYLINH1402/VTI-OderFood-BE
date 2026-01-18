@@ -21,7 +21,6 @@ import com.foodorder.backend.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,31 +39,17 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final S3Service s3Service;
-
-    @Autowired
-    // private PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserTokenRepository userTokenRepository;
-
-    @Autowired
     private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private BrevoEmailService brevoEmailService;
+    private final BrevoEmailService brevoEmailService;
+    private final TemplateEngine templateEngine;
+    private final ForgotPasswordRequestRepository forgotPasswordRequestRepository;
+    private final HttpServletRequest request;
+    private final ChangePasswordAttemptRepository changePasswordAttemptRepository;
 
     @Value("${app.frontend.reset-password-url}")
     private String resetPasswordUrl;
 
-    @Autowired
-    private TemplateEngine templateEngine;
-
-    @Autowired
-    private ForgotPasswordRequestRepository forgotPasswordRequestRepository;
-
-    @Autowired
-    private HttpServletRequest request;
-
-    @Autowired
-    private ChangePasswordAttemptRepository changePasswordAttemptRepository;
 
     @Override
     public User save(User user) {

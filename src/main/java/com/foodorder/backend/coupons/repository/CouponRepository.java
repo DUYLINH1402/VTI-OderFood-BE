@@ -84,4 +84,47 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
      * Đếm số lượng coupon theo trạng thái
      */
     long countByStatus(CouponStatus status);
+
+    // === THỐNG KÊ NÂNG CAO ===
+
+    /**
+     * Đếm số lượng coupon theo loại
+     */
+    long countByCouponType(CouponType couponType);
+
+    /**
+     * Đếm số lượng coupon theo loại giảm giá
+     */
+    long countByDiscountType(com.foodorder.backend.coupons.entity.DiscountType discountType);
+
+    /**
+     * Lấy top coupon được sử dụng nhiều nhất
+     */
+    @Query("SELECT c FROM Coupon c ORDER BY c.usedCount DESC")
+    List<Coupon> findTopByUsedCount(Pageable pageable);
+
+    /**
+     * Tính tổng số lần sử dụng của tất cả coupon
+     */
+    @Query("SELECT COALESCE(SUM(c.usedCount), 0) FROM Coupon c")
+    Long getTotalUsageCount();
+
+    /**
+     * Lấy danh sách coupon theo nhiều tiêu chí filter
+     */
+    @Query("SELECT c FROM Coupon c WHERE " +
+           "(:status IS NULL OR c.status = :status) AND " +
+           "(:couponType IS NULL OR c.couponType = :couponType) AND " +
+           "(:keyword IS NULL OR LOWER(c.code) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Coupon> findByFilters(@Param("status") CouponStatus status,
+                               @Param("couponType") CouponType couponType,
+                               @Param("keyword") String keyword,
+                               Pageable pageable);
+
+    /**
+     * Đếm số coupon được tạo trong khoảng thời gian
+     */
+    @Query("SELECT COUNT(c) FROM Coupon c WHERE c.createdAt BETWEEN :startDate AND :endDate")
+    Long countByCreatedAtBetween(@Param("startDate") LocalDateTime startDate,
+                                  @Param("endDate") LocalDateTime endDate);
 }
