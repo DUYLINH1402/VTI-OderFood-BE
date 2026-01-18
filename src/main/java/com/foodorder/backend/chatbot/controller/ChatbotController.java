@@ -4,6 +4,11 @@ import com.foodorder.backend.chatbot.dto.ChatRequestDTO;
 import com.foodorder.backend.chatbot.entity.ChatbotMessage;
 import com.foodorder.backend.chatbot.service.ChatbotService;
 import com.foodorder.backend.exception.ApiError;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,23 +21,28 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Controller xử lý API cho Chatbot
+ * Controller xử lý API cho Chatbot AI
  */
 @RestController
 @RequestMapping("/api/chatbot")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 @Slf4j
+@Tag(name = "Chatbot", description = "API Chatbot AI hỗ trợ khách hàng")
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
 
-    /**
-     * API chat với bot - endpoint chính
-     */
+    @Operation(summary = "Chat với bot", description = "Gửi tin nhắn và nhận phản hồi từ AI chatbot.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "400", description = "Yêu cầu không hợp lệ"),
+            @ApiResponse(responseCode = "500", description = "Lỗi server")
+    })
     @PostMapping("/chat")
-    public Mono<ResponseEntity<Object>> chat(@Valid @RequestBody ChatRequestDTO request,
-                                            Authentication authentication) {
+    public Mono<ResponseEntity<Object>> chat(
+            @Valid @RequestBody ChatRequestDTO request,
+            @Parameter(hidden = true) Authentication authentication) {
         try {
             // Lấy user ID nếu đã đăng nhập
             if (authentication != null && request.getUserId() == null) {
@@ -64,11 +74,14 @@ public class ChatbotController {
         }
     }
 
-    /**
-     * Lấy lịch sử chat theo session
-     */
+    @Operation(summary = "Lịch sử chat", description = "Lấy lịch sử chat theo session ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "400", description = "Session ID không hợp lệ")
+    })
     @GetMapping("/history/{sessionId}")
-    public ResponseEntity<?> getChatHistory(@PathVariable String sessionId) {
+    public ResponseEntity<?> getChatHistory(
+            @Parameter(description = "Session ID của cuộc hội thoại") @PathVariable String sessionId) {
         try {
             if (sessionId == null || sessionId.trim().isEmpty()) {
                 ApiError apiError = ApiError.builder()
@@ -95,9 +108,11 @@ public class ChatbotController {
         }
     }
 
-    /**
-     * Đánh giá phản hồi của bot
-     */
+    @Operation(summary = "Đánh giá phản hồi", description = "Đánh giá chất lượng phản hồi của chatbot (1-5 sao).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Đánh giá thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ")
+    })
     @PostMapping("/rate")
     public ResponseEntity<?> rateResponse(@RequestBody Map<String, Object> request) {
         try {
@@ -160,9 +175,8 @@ public class ChatbotController {
         }
     }
 
-    /**
-     * Health check cho chatbot service
-     */
+    @Operation(summary = "Health check", description = "Kiểm tra trạng thái hoạt động của chatbot service.")
+    @ApiResponse(responseCode = "200", description = "Service đang hoạt động")
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> healthCheck() {
         return ResponseEntity.ok(Map.of(

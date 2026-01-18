@@ -3,6 +3,11 @@ package com.foodorder.backend.notifications.controller;
 import com.foodorder.backend.notifications.dto.NotificationResponseDTO;
 import com.foodorder.backend.notifications.service.NotificationService;
 import com.foodorder.backend.security.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -24,20 +29,22 @@ import java.util.Map;
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Notifications", description = "API quản lý thông báo - Legacy endpoints")
 public class NotificationController {
 
     private final NotificationService notificationService;
 
-    /**
-     * GET /api/notifications
-     * Lấy tất cả thông báo của user hiện tại (có phân trang)
-     * @deprecated Sử dụng /api/notifications/user thay thế
-     */
+    @Operation(summary = "Lấy tất cả thông báo", description = "Lấy tất cả thông báo của user hiện tại (có phân trang). Deprecated: Sử dụng /api/notifications/user thay thế.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "401", description = "Chưa đăng nhập")
+    })
+    @Deprecated
     @GetMapping
     public ResponseEntity<Page<NotificationResponseDTO>> getAllNotifications(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "20") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
         Page<NotificationResponseDTO> notifications = notificationService
@@ -46,14 +53,12 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
-    /**
-     * GET /api/notifications/unread
-     * Lấy danh sách thông báo chưa đọc của user hiện tại
-     * @deprecated Sử dụng /api/notifications/user/unread thay thế
-     */
+    @Operation(summary = "Thông báo chưa đọc", description = "Lấy danh sách thông báo chưa đọc. Deprecated: Sử dụng /api/notifications/user/unread thay thế.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @Deprecated
     @GetMapping("/unread")
     public ResponseEntity<List<NotificationResponseDTO>> getUnreadNotifications(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         List<NotificationResponseDTO> unreadNotifications = notificationService
                 .getUnreadNotificationsByUser(userDetails.getId());
@@ -61,14 +66,12 @@ public class NotificationController {
         return ResponseEntity.ok(unreadNotifications);
     }
 
-    /**
-     * GET /api/notifications/unread/count
-     * Lấy số lượng thông báo chưa đọc
-     * @deprecated Sử dụng /api/notifications/user/unread/count thay thế
-     */
+    @Operation(summary = "Đếm thông báo chưa đọc", description = "Lấy số lượng thông báo chưa đọc. Deprecated: Sử dụng /api/notifications/user/unread/count thay thế.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @Deprecated
     @GetMapping("/unread/count")
     public ResponseEntity<Map<String, Long>> getUnreadCount(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         log.info("User {} lấy số lượng thông báo chưa đọc (legacy endpoint)", userDetails.getId());
 
@@ -77,15 +80,16 @@ public class NotificationController {
         return ResponseEntity.ok(Map.of("unreadCount", unreadCount));
     }
 
-    /**
-     * PUT /api/notifications/{id}/read
-     * Đánh dấu một thông báo đã đọc
-     * @deprecated Sử dụng /api/notifications/user/{id}/read thay thế
-     */
+    @Operation(summary = "Đánh dấu đã đọc", description = "Đánh dấu một thông báo là đã đọc. Deprecated: Sử dụng /api/notifications/user/{id}/read thay thế.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy thông báo")
+    })
+    @Deprecated
     @PutMapping("/{id}/read")
     public ResponseEntity<NotificationResponseDTO> markAsRead(
-            @PathVariable Long id,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @Parameter(description = "ID của thông báo") @PathVariable Long id,
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         NotificationResponseDTO notification = notificationService
                 .markAsReadByUser(id, userDetails.getId());
@@ -93,14 +97,12 @@ public class NotificationController {
         return ResponseEntity.ok(notification);
     }
 
-    /**
-     * PUT /api/notifications/read-all
-     * Đánh dấu tất cả thông báo là đã đọc
-     * @deprecated Sử dụng /api/notifications/user/read-all thay thế
-     */
+    @Operation(summary = "Đánh dấu tất cả đã đọc", description = "Đánh dấu tất cả thông báo là đã đọc. Deprecated: Sử dụng /api/notifications/user/read-all thay thế.")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @Deprecated
     @PutMapping("/read-all")
     public ResponseEntity<Map<String, String>> markAllAsRead(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @Parameter(hidden = true) @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         log.info("User {} đánh dấu tất cả thông báo đã đọc (legacy endpoint)", userDetails.getId());
 

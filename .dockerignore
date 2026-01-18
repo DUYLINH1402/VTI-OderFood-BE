@@ -1,0 +1,43 @@
+# ===========================================
+# File .dockerignore - Bỏ qua các file không cần thiết khi build Docker
+# ===========================================
+
+# Thư mục build
+target/
+build/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Environment files (bảo mật)
+.env
+.env.local
+
+# Docker files
+docker-compose*.yml
+Dockerfile*
+.docker/
+
+# Documentation
+*.md
+docs/
+
+# Test files
+src/test/
+
+# Temporary files
+*.tmp
+*.temp
+

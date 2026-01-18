@@ -1,0 +1,28 @@
+# ===========================================
+# Application Configuration - DOCKER Profile
+# Sử dụng database: food_ordering_system
+# Kết nối MySQL container trong Docker (mysql:3306)
+# ===========================================
+
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  # ===========================================
+  # Database Configuration - DOCKER
+  # ===========================================
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_DATABASE_URL:jdbc:mysql://mysql:3306/food_ordering_system?useSSL=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+
+  # ===========================================
+  # Redis Cache Configuration - DOCKER
+  # ===========================================
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+

@@ -99,7 +99,6 @@ public class StaffWebSocketController {
      */
     @MessageMapping("/staff/register")
     public void registerStaff(@Payload Object payload, SimpMessageHeaderAccessor headerAccessor) {
-        // Redirect to order updates registration
         registerStaffOrderUpdates(payload, headerAccessor);
     }
 

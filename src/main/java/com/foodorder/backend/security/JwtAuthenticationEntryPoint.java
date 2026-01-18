@@ -11,6 +11,8 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Xử lý các trường hợp người dùng truy cập endpoint cần authentication
@@ -22,10 +24,32 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Danh sách các URL patterns công khai (Swagger, API docs...)
+     */
+    private static final List<String> PUBLIC_URL_PREFIXES = Arrays.asList(
+            "/swagger-ui",
+            "/v3/api-docs",
+            "/swagger-resources",
+            "/webjars",
+            "/configuration"
+    );
+
     @Override
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) throws IOException, ServletException {
+
+        String path = request.getRequestURI();
+
+        // Nếu là URL công khai (Swagger...), không trả về lỗi 401
+        // Điều này không nên xảy ra nếu cấu hình đúng, nhưng để đảm bảo an toàn
+        boolean isPublicUrl = PUBLIC_URL_PREFIXES.stream().anyMatch(path::startsWith);
+        if (isPublicUrl) {
+            log.debug("Public URL accessed without auth: {}", path);
+            // Cho phép tiếp tục, không block
+            return;
+        }
 
         // Tạo response lỗi chuẩn hóa
         ApiError apiError = ApiError.builder()

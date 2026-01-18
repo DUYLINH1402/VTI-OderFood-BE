@@ -1,11 +1,18 @@
 package com.foodorder.backend.order.controller;
 
+import com.foodorder.backend.order.dto.request.AdminCancelOrderRequest;
+import com.foodorder.backend.order.dto.request.UpdateInternalNoteRequest;
 import com.foodorder.backend.order.dto.request.UpdateOrderStatusRequest;
+import com.foodorder.backend.order.dto.response.AdminDashboardStatsResponse;
 import com.foodorder.backend.order.dto.response.OrderResponse;
 import com.foodorder.backend.order.dto.response.OrderStatisticsResponse;
 import com.foodorder.backend.order.dto.response.PageResponse;
 import com.foodorder.backend.order.dto.response.ApiResponse;
 import com.foodorder.backend.order.service.AdminOrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,26 +32,24 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@Tag(name = "Admin Orders", description = "API quản lý đơn hàng dành cho Admin - Quyền cao nhất")
 public class AdminOrderController {
 
     private final AdminOrderService adminOrderService;
 
-    /**
-     * Lấy tất cả đơn hàng với bộ lọc đa dạng (ADMIN)
-     */
+    @Operation(summary = "Tất cả đơn hàng", description = "Lấy tất cả đơn hàng với nhiều bộ lọc (Admin).")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/all")
     public ResponseEntity<PageResponse<OrderResponse>> getAllOrders(
-            @RequestParam(defaultValue = "all") String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) String orderCode,
-            @RequestParam(required = false) String customerName,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
-
-        log.info("Admin getting all orders with filters - status: {}, page: {}", status, page);
+            @Parameter(description = "Trạng thái đơn hàng") @RequestParam(defaultValue = "all") String status,
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Trường sắp xếp") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Hướng sắp xếp") @RequestParam(defaultValue = "desc") String sortDir,
+            @Parameter(description = "Mã đơn hàng") @RequestParam(required = false) String orderCode,
+            @Parameter(description = "Tên khách hàng") @RequestParam(required = false) String customerName,
+            @Parameter(description = "Ngày bắt đầu") @RequestParam(required = false) String startDate,
+            @Parameter(description = "Ngày kết thúc") @RequestParam(required = false) String endDate) {
 
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         PageRequest pageRequest = PageRequest.of(page, size, sort);
@@ -55,16 +60,13 @@ public class AdminOrderController {
         return ResponseEntity.ok(orders);
     }
 
-    /**
-     * Thống kê đơn hàng tổng quan (ADMIN)
-     */
+    @Operation(summary = "Thống kê đơn hàng", description = "Lấy thống kê tổng quan về đơn hàng (Admin).")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/statistics")
     public ResponseEntity<ApiResponse<OrderStatisticsResponse>> getOrderStatistics(
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String period) {
-
-        log.info("Admin getting order statistics - period: {}", period);
+            @Parameter(description = "Ngày bắt đầu") @RequestParam(required = false) String startDate,
+            @Parameter(description = "Ngày kết thúc") @RequestParam(required = false) String endDate,
+            @Parameter(description = "Khoảng thời gian") @RequestParam(required = false) String period) {
 
         OrderStatisticsResponse statistics = adminOrderService.getOrderStatistics(startDate, endDate, period);
 
@@ -75,15 +77,15 @@ public class AdminOrderController {
                 .build());
     }
 
-    /**
-     * Cập nhật trạng thái đơn hàng với quyền cao nhất (ADMIN)
-     */
+    @Operation(summary = "Cập nhật trạng thái đơn hàng", description = "Cập nhật trạng thái đơn hàng với quyền cao nhất (Admin).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Cập nhật thành công"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy đơn hàng")
+    })
     @PutMapping("/{orderId}/status")
     public ResponseEntity<ApiResponse<OrderResponse>> updateOrderStatus(
-            @PathVariable Long orderId,
+            @Parameter(description = "ID đơn hàng") @PathVariable Long orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request) {
-
-        log.info("Admin updating order {} to status {}", orderId, request.getStatus());
 
         OrderResponse updatedOrder = adminOrderService.updateOrderStatusWithFullAccess(orderId, request);
 
@@ -94,30 +96,29 @@ public class AdminOrderController {
                 .build());
     }
 
-    /**
-     * Xóa đơn hàng (ADMIN only - soft delete)
-     */
+    @Operation(summary = "Xóa đơn hàng", description = "Xóa đơn hàng (soft delete) - Chỉ Admin.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Xóa thành công"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy đơn hàng")
+    })
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable Long orderId) {
-
-        log.warn("Admin deleting order {}", orderId);
-
+    public ResponseEntity<ApiResponse<Void>> deleteOrder(
+            @Parameter(description = "ID đơn hàng") @PathVariable Long orderId) {
         adminOrderService.deleteOrder(orderId);
-
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Xóa đơn hàng thành công")
                 .build());
     }
 
-    /**
-     * Khôi phục đơn hàng đã hủy (ADMIN)
-     */
+    @Operation(summary = "Khôi phục đơn hàng", description = "Khôi phục đơn hàng đã bị hủy (Admin).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Khôi phục thành công"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy đơn hàng")
+    })
     @PostMapping("/{orderId}/restore")
-    public ResponseEntity<ApiResponse<OrderResponse>> restoreOrder(@PathVariable Long orderId) {
-
-        log.info("Admin restoring order {}", orderId);
-
+    public ResponseEntity<ApiResponse<OrderResponse>> restoreOrder(
+            @Parameter(description = "ID đơn hàng") @PathVariable Long orderId) {
         OrderResponse order = adminOrderService.restoreOrder(orderId);
 
         return ResponseEntity.ok(ApiResponse.<OrderResponse>builder()
@@ -127,13 +128,14 @@ public class AdminOrderController {
                 .build());
     }
 
-    /**
-     * Lấy chi tiết đơn hàng với thông tin đầy đủ (ADMIN)
-     */
+    @Operation(summary = "Chi tiết đơn hàng đầy đủ", description = "Lấy chi tiết đơn hàng với thông tin đầy đủ (Admin).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Thành công"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy đơn hàng")
+    })
     @GetMapping("/{orderId}/details")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrderFullDetails(@PathVariable Long orderId) {
-
-        log.info("Admin getting full order details: {}", orderId);
+    public ResponseEntity<ApiResponse<OrderResponse>> getOrderFullDetails(
+            @Parameter(description = "ID đơn hàng") @PathVariable Long orderId) {
 
         OrderResponse order = adminOrderService.getOrderFullDetails(orderId);
 
@@ -144,26 +146,80 @@ public class AdminOrderController {
                 .build());
     }
 
-    /**
-     * Tìm kiếm đơn hàng nâng cao (ADMIN)
-     */
+    @Operation(summary = "Tìm kiếm nâng cao", description = "Tìm kiếm đơn hàng nâng cao với nhiều tiêu chí (Admin).")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Thành công")
     @GetMapping("/advanced-search")
     public ResponseEntity<PageResponse<OrderResponse>> advancedSearch(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String customerEmail,
-            @RequestParam(required = false) String customerPhone,
-            @RequestParam(required = false) Double minAmount,
-            @RequestParam(required = false) Double maxAmount,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        log.info("Admin performing advanced search with keyword: {}", keyword);
+            @Parameter(description = "Từ khóa tìm kiếm") @RequestParam(required = false) String keyword,
+            @Parameter(description = "Trạng thái") @RequestParam(required = false) String status,
+            @Parameter(description = "Email khách hàng") @RequestParam(required = false) String customerEmail,
+            @Parameter(description = "SĐT khách hàng") @RequestParam(required = false) String customerPhone,
+            @Parameter(description = "Giá trị tối thiểu") @RequestParam(required = false) Double minAmount,
+            @Parameter(description = "Giá trị tối đa") @RequestParam(required = false) Double maxAmount,
+            @Parameter(description = "Số trang") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Số lượng mỗi trang") @RequestParam(defaultValue = "10") int size) {
 
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
         PageResponse<OrderResponse> orders = adminOrderService.advancedSearch(
                 keyword, status, customerEmail, customerPhone, minAmount, maxAmount, pageRequest);
 
         return ResponseEntity.ok(orders);
+    }
+
+    // ============ CÁC API MỚI CHO ADMIN ============
+
+    @Operation(summary = "Cập nhật ghi chú nội bộ", description = "Cập nhật ghi chú nội bộ cho đơn hàng (chỉ Admin/Staff thấy).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Cập nhật thành công"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy đơn hàng")
+    })
+    @PutMapping("/{orderId}/internal-note")
+    public ResponseEntity<ApiResponse<OrderResponse>> updateInternalNote(
+            @Parameter(description = "ID đơn hàng") @PathVariable Long orderId,
+            @Valid @RequestBody UpdateInternalNoteRequest request) {
+
+        log.info("Admin cập nhật ghi chú nội bộ cho đơn hàng ID: {}", orderId);
+        OrderResponse updatedOrder = adminOrderService.updateInternalNote(orderId, request);
+
+        return ResponseEntity.ok(ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .message("Cập nhật ghi chú nội bộ thành công")
+                .data(updatedOrder)
+                .build());
+    }
+
+    @Operation(summary = "Hủy đơn hàng với lý do", description = "Hủy đơn hàng kèm lý do chi tiết (Admin).")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Hủy thành công"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Không tìm thấy đơn hàng")
+    })
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrderWithReason(
+            @Parameter(description = "ID đơn hàng") @PathVariable Long orderId,
+            @Valid @RequestBody AdminCancelOrderRequest request) {
+
+        log.info("Admin hủy đơn hàng ID: {} với lý do: {}", orderId, request.getCancelReason());
+        OrderResponse cancelledOrder = adminOrderService.cancelOrderWithReason(orderId, request);
+
+        return ResponseEntity.ok(ApiResponse.<OrderResponse>builder()
+                .success(true)
+                .message("Hủy đơn hàng thành công")
+                .data(cancelledOrder)
+                .build());
+    }
+
+    @Operation(summary = "Thống kê Dashboard", description = "Lấy thống kê chuyên sâu cho Dashboard Admin (doanh thu, đơn hủy, v.v.).")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Thành công")
+    @GetMapping("/dashboard-stats")
+    public ResponseEntity<ApiResponse<AdminDashboardStatsResponse>> getDashboardStats() {
+
+        log.info("Admin lấy thống kê dashboard");
+        AdminDashboardStatsResponse stats = adminOrderService.getDashboardStats();
+
+        return ResponseEntity.ok(ApiResponse.<AdminDashboardStatsResponse>builder()
+                .success(true)
+                .message("Lấy thống kê dashboard thành công")
+                .data(stats)
+                .build());
     }
 }

@@ -66,7 +66,6 @@ Luôn comment rõ ràng ở các hàm xử lý nghiệp vụ hoặc logic phức
 - Sử dụng branch cho từng tính năng.
 - Commit message rõ ràng, ngắn gọn, có ý nghĩa.
 - Luôn review code trước khi merge.
-- Viết test cho các service và controller quan trọng.
 - Sử dụng môi trường dev/test trước khi lên production.
 
 ## Lưu ý đặc biệt
@@ -75,6 +74,7 @@ Luôn comment rõ ràng ở các hàm xử lý nghiệp vụ hoặc logic phức
 - Sử dụng biến môi trường cho thông tin bảo mật.
 - Tối ưu hiệu năng cho các truy vấn DB và API.
 - Đảm bảo bảo mật dữ liệu người dùng.
+- Các Api cần Cache thì luôn ưu tiên để tối ưu dữ liệu (Đã có sẵn CacheConfig trong project)
 
 ## Hướng dẫn cho Copilot
 

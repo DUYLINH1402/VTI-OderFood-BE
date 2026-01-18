@@ -1,0 +1,132 @@
+# ===========================================
+# Docker Compose cho Food Order System
+# Bao gồm: Backend, MySQL, Redis (cache)
+# ===========================================
+
+services:
+  # ===========================================
+  # MySQL Database
+  # ===========================================
+  mysql:
+    image: mysql:8.0
+    container_name: foodorder-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: food_ordering_system
+      MYSQL_USER: admin123
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306" # Đổi về 3306 cho chuẩn nội bộ
+    command: --innodb-buffer-pool-size=128M # Tiết kiệm RAM cho MySQL
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - foodorder-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===========================================
+  # Redis Cache (tùy chọn, cho CacheConfig)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: foodorder-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - foodorder-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Backend - Spring Boot API
+  # ===========================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: foodorder-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database configuration - Trỏ vào container MySQL trong Docker
+      # Production sử dụng database: food_ordering_system
+      MYSQL_DATABASE_URL: jdbc:mysql://mysql:3306/food_ordering_system?useSSL=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+
+      # Giới hạn RAM cho Java để chạy được trên gói Lightsail
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx400m"
+
+      # JWT configuration
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # AWS S3 configuration
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+
+      # Brevo Email configuration
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
+
+      # ZaloPay configuration
+      ZALOPAY_APP_ID: ${ZALOPAY_APP_ID}
+      ZALOPAY_KEY1: ${ZALOPAY_KEY1}
+      ZALOPAY_KEY2: ${ZALOPAY_KEY2}
+
+      # OpenAI configuration
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Frontend URL
+      RESET_PASSWORD_URL: ${RESET_PASSWORD_URL}
+
+      # Redis configuration (cho cache)
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+
+      # Active profile
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8081:8081"
+    networks:
+      - foodorder-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  foodorder-network:
+    driver: bridge
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+

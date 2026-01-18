@@ -14,6 +14,11 @@ import com.foodorder.backend.order.repository.OrderRepository;
 import com.foodorder.backend.order.entity.Order;
 import com.foodorder.backend.order.entity.PaymentStatus;
 import com.foodorder.backend.user.repository.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +29,13 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
-import org.springframework.http.ResponseEntity;
 
+/**
+ * Controller xử lý các nghiệp vụ thanh toán
+ */
 @RestController
 @RequestMapping("/api/payments")
+@Tag(name = "Payments", description = "API xử lý thanh toán - ZaloPay, Momo, COD")
 public class PaymentController {
 
     @Autowired
@@ -43,6 +51,11 @@ public class PaymentController {
     @Autowired
     private UserRepository userRepository;
 
+    @Operation(summary = "Tạo thanh toán", description = "Tạo yêu cầu thanh toán cho đơn hàng. Hỗ trợ ZaloPay, ATM, VISA, Momo và COD.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Tạo thanh toán thành công - Trả về URL thanh toán"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ hoặc phương thức thanh toán không được hỗ trợ")
+    })
     @PostMapping
     public PaymentResponse createPayment(@RequestBody PaymentRequest request) {
         // Validate trước khi tạo payment
@@ -168,7 +181,8 @@ public class PaymentController {
         }
     }
 
-    // Endpoint linh hoạt để handle ZaloPay callback với nhiều format
+    @Operation(summary = "ZaloPay Callback", description = "Endpoint nhận callback từ ZaloPay khi thanh toán hoàn thành. Không gọi trực tiếp.")
+    @ApiResponse(responseCode = "200", description = "Xử lý callback thành công")
     @PostMapping("/zalopay/callback-flexible")
     public String handleZaloPayCallbackFlexible(@RequestBody Map<String, Object> payload) {
         // System.out.println("=== Received ZaloPay Callback ===");
@@ -205,9 +219,14 @@ public class PaymentController {
         }
     }
 
-    // Endpoint để manual check payment status
+    @Operation(summary = "Kiểm tra trạng thái thanh toán", description = "Kiểm tra trạng thái thanh toán ZaloPay theo app_trans_id.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Thành công"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy giao dịch")
+    })
     @GetMapping("/zalopay/check-status/{appTransId}")
-    public String checkPaymentStatus(@PathVariable String appTransId) {
+    public String checkPaymentStatus(
+            @Parameter(description = "App Trans ID của giao dịch") @PathVariable String appTransId) {
         try {
             // Query từ ZaloPay API
             zaloPayService.queryPaymentStatus(appTransId);
@@ -217,7 +236,12 @@ public class PaymentController {
         }
     }
 
-    // Endpoint để frontend update payment status (cho trường hợp thất bại)
+    @Operation(summary = "Cập nhật trạng thái thanh toán", description = "Frontend gọi endpoint này để cập nhật trạng thái thanh toán (thất bại/thành công).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cập nhật thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ"),
+            @ApiResponse(responseCode = "500", description = "Lỗi server")
+    })
     @PostMapping("/update-status")
     public ResponseEntity<?> updatePaymentStatus(@RequestBody Map<String, Object> request) {
         try {

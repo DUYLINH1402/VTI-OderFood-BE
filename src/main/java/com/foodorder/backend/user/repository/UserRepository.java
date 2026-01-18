@@ -1,6 +1,8 @@
 package com.foodorder.backend.user.repository;
 
 import com.foodorder.backend.user.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -47,4 +49,62 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     @Query("SELECT u FROM User u JOIN FETCH u.role r WHERE r.code = 'ROLE_ADMIN' AND u.isActive = true")
     List<User> findActiveAdminUsers();
+
+    /**
+     * Đếm số user theo role code
+     */
+    @Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.code = :roleCode")
+    long countByRoleCode(@Param("roleCode") String roleCode);
+
+    /**
+     * Đếm số user mới đăng ký trong khoảng thời gian
+     */
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt >= :startDate AND u.createdAt <= :endDate")
+    long countNewUsersByDateRange(@Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+
+    /**
+     * Đếm số user mới theo role trong khoảng thời gian
+     */
+    @Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.code = :roleCode AND u.createdAt >= :startDate AND u.createdAt <= :endDate")
+    long countNewUsersByRoleAndDateRange(@Param("roleCode") String roleCode, @Param("startDate") java.time.LocalDateTime startDate, @Param("endDate") java.time.LocalDateTime endDate);
+
+    /**
+     * Lấy danh sách user mới đăng ký gần đây
+     */
+    @Query("SELECT u FROM User u JOIN FETCH u.role r WHERE r.code = :roleCode ORDER BY u.createdAt DESC")
+    List<User> findRecentUsersByRole(@Param("roleCode") String roleCode, org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Tìm kiếm users với filter cho admin
+     * Hỗ trợ tìm theo keyword (username, email, fullName, phoneNumber), roleCode, isActive
+     */
+    @Query("SELECT u FROM User u JOIN FETCH u.role r WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "u.phoneNumber LIKE CONCAT('%', :keyword, '%')) AND " +
+            "(:roleCode IS NULL OR :roleCode = '' OR r.code = :roleCode) AND " +
+            "(:isActive IS NULL OR u.isActive = :isActive)")
+    Page<User> findAllUsersWithFilters(
+            @Param("keyword") String keyword,
+            @Param("roleCode") String roleCode,
+            @Param("isActive") Boolean isActive,
+            Pageable pageable);
+
+    /**
+     * Đếm số users với filter
+     */
+    @Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(u.username) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "u.phoneNumber LIKE CONCAT('%', :keyword, '%')) AND " +
+            "(:roleCode IS NULL OR :roleCode = '' OR r.code = :roleCode) AND " +
+            "(:isActive IS NULL OR u.isActive = :isActive)")
+    long countUsersWithFilters(
+            @Param("keyword") String keyword,
+            @Param("roleCode") String roleCode,
+            @Param("isActive") Boolean isActive);
 }
