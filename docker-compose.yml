@@ -69,8 +69,8 @@ services:
       # Database configuration - Trỏ vào container MySQL trong Docker
       # Production sử dụng database: food_ordering_system
       MYSQL_DATABASE_URL: jdbc:mysql://mysql:3306/food_ordering_system?useSSL=false&serverTimezone=UTC&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
       # Giới hạn RAM cho Java để chạy được trên gói Lightsail
       JAVA_TOOL_OPTIONS: "-Xms256m -Xmx400m"
