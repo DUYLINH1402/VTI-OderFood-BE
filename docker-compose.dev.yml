@@ -14,10 +14,11 @@ services:
     container_name: foodorder-mysql-dev
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: food_ordering_system
-      MYSQL_USER: foodorder
-      MYSQL_PASSWORD: foodorder123
+      MYSQL_ROOT_PASSWORD: Ngaythanhcong1402
+      MYSQL_DATABASE: local_order_food_system
+      # Lưu ý: MYSQL_USER không được đặt là 'root' vì user root đã tồn tại sẵn
+      MYSQL_USER: admin123
+      MYSQL_PASSWORD: Ngaythanhcong1402
     ports:
       - "3306:3306"
     volumes:
@@ -26,7 +27,7 @@ services:
     networks:
       - foodorder-network-dev
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pNgaythanhcong1402"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,7 +59,7 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: Ngaythanhcong1402
     ports:
       - "8080:80"
     networks:
@@ -70,7 +71,5 @@ networks:
 
 volumes:
   mysql_data_dev:
-    driver: local
   redis_data_dev:
-    driver: local
 
