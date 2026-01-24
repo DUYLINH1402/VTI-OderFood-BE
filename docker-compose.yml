@@ -55,9 +55,7 @@ services:
   # Backend - Spring Boot API
   # ===========================================
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: duylinhgct/foodorder-backend:latest
     container_name: foodorder-backend
     restart: unless-stopped
     depends_on:
