@@ -52,6 +52,12 @@ public class FoodResponse {
     @Schema(description = "Tổng số lượng đã bán", example = "150")
     private Integer totalSold;
 
+    @Schema(description = "Tổng số lượt like", example = "25")
+    private Integer totalLikes;
+
+    @Schema(description = "Tổng số lượt share", example = "10")
+    private Integer totalShares;
+
     @Schema(description = "Ghi chú trạng thái (VD: lý do hết hàng)", example = "Tạm hết nguyên liệu")
     private String statusNote;
 

@@ -146,6 +146,21 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/coupons/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/coupons/**").hasRole("ADMIN")
 
+                        // LIKES - Toggle like yêu cầu đăng nhập, xem thông tin like cho phép public
+                        .requestMatchers(HttpMethod.POST, "/api/likes/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/likes/check/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/likes/**").permitAll()
+
+                        // SHARES - Ghi nhận share cho phép cả khách vãng lai, xem số share public
+                        .requestMatchers("/api/shares/**").permitAll()
+
+                        // COMMENTS - Phân quyền chi tiết cho User và Admin
+                        .requestMatchers(HttpMethod.GET, "/api/comments/**").permitAll() // Xem comment public
+                        .requestMatchers(HttpMethod.POST, "/api/comments").authenticated() // Tạo comment yêu cầu đăng nhập
+                        .requestMatchers(HttpMethod.PUT, "/api/comments/**").authenticated() // Sửa comment yêu cầu đăng nhập
+                        .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated() // Xóa comment yêu cầu đăng nhập
+                        .requestMatchers("/api/admin/comments/**").hasRole("ADMIN") // Admin quản lý comment
+
                         // Các request khác cần authentication
                         .anyRequest().authenticated()
                 )

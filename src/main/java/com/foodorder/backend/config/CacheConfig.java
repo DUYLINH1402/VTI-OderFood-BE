@@ -37,6 +37,10 @@ public class CacheConfig {
     // Promotion Statistics Caches
     public static final String COUPON_STATISTICS_CACHE = "couponStatisticsCache";
     public static final String POINTS_STATISTICS_CACHE = "pointsStatisticsCache";
+    // Comment Caches
+    public static final String COMMENTS_BY_TARGET_CACHE = "commentsByTarget";
+    public static final String COMMENT_COUNT_CACHE = "commentCount";
+    public static final String ADMIN_COMMENTS_CACHE = "adminComments";
 
     @Bean
     public CacheManager cacheManager() {
@@ -59,7 +63,11 @@ public class CacheConfig {
                 new ConcurrentMapCache(FOOD_PERFORMANCE_CACHE),
                 // Promotion Statistics Caches
                 new ConcurrentMapCache(COUPON_STATISTICS_CACHE),
-                new ConcurrentMapCache(POINTS_STATISTICS_CACHE)
+                new ConcurrentMapCache(POINTS_STATISTICS_CACHE),
+                // Comment Caches
+                new ConcurrentMapCache(COMMENTS_BY_TARGET_CACHE),
+                new ConcurrentMapCache(COMMENT_COUNT_CACHE),
+                new ConcurrentMapCache(ADMIN_COMMENTS_CACHE)
         ));
         return cacheManager;
     }

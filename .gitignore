@@ -1,5 +1,12 @@
 HELP.md
 target/
+src/main/resources/application-local.yml
+Build.txt
+Lightsail.txt
+Log.txt
+NOTES.txt
+RenewSSL_By_AWC_EC2.txt
+
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -32,11 +39,3 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
-.vscode/
-src/main/resources/application-local.yml
-build.txt
-Lightsail.txt
-log.txt
-NOTES.txt
-RenewSSL_By_AWC_EC2.txt
