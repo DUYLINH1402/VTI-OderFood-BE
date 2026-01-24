@@ -2,7 +2,7 @@ name: CI/CD Pipeline for Spring Boot
 
 on:
   push:
-    branches: [ "main" ] # Hoặc branch bạn dùng để deploy
+    branches: [ "main" ]
 
 jobs:
   build-and-push:
@@ -11,7 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17 # Đổi version phù hợp với máy bạn
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
@@ -32,25 +32,22 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
 
-deploy:
-  needs: build-and-push
-  runs-on: ubuntu-latest
-  steps:
-    - name: Executing remote ssh commands using password
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.LIGHTSAIL_HOST }}
-        username: ${{ secrets.LIGHTSAIL_USERNAME }}
-        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-        script: |
-#           Di chuyển vào đúng thư mục chứa docker-compose.yml
-          cd ~/backend 
-          
-          # Pull image mới nhất từ Docker Hub
-          docker pull ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
-          
-          # Restart service backend (Docker Compose sẽ tự nhận image mới)
-          docker compose up -d backend
-          
-          # Dọn dẹp các image cũ (nếu có) để giải phóng dung lượng
-          docker image prune -f
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executing remote ssh commands using password
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script: |
+#             Di chuyển vào đúng thư mục chứa docker-compose.yml
+            cd ~/backend
+            # Pull image mới nhất từ Docker Hub
+            docker pull ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
+            # Restart service backend (Docker Compose sẽ tự nhận image mới)
+            docker compose up -d backend
+            # Dọn dẹp các image cũ (nếu có) để giải phóng dung lượng
+            docker image prune -f
