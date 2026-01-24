@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.LIGHTSAIL_USERNAME }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
-#             Di chuyển vào đúng thư mục chứa docker-compose.yml
+            # Di chuyển vào đúng thư mục chứa docker-compose.yml
             cd ~/backend
             # Pull image mới nhất từ Docker Hub
             docker pull ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
