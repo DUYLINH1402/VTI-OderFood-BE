@@ -32,18 +32,25 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Executing remote ssh commands using password
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.LIGHTSAIL_HOST }}
-          username: ${{ secrets.LIGHTSAIL_USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
-            docker stop my-foodorder-backend || true
-            docker rm my-foodorder-backend || true
-            docker run -d --name my-foodorder-backend -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
+deploy:
+  needs: build-and-push
+  runs-on: ubuntu-latest
+  steps:
+    - name: Executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USERNAME }}
+        key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+        script: |
+#           Di chuyển vào đúng thư mục chứa docker-compose.yml
+          cd ~/backend 
+          
+          # Pull image mới nhất từ Docker Hub
+          docker pull ${{ secrets.DOCKER_USERNAME }}/foodorder-backend:latest
+          
+          # Restart service backend (Docker Compose sẽ tự nhận image mới)
+          docker compose up -d backend
+          
+          # Dọn dẹp các image cũ (nếu có) để giải phóng dung lượng
+          docker image prune -f
