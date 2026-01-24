@@ -66,6 +66,10 @@ public class FoodServiceImpl implements FoodService {
         // Map statusNote
         response.setStatusNote(food.getStatusNote());
 
+        // Map totalLikes và totalShares (đảm bảo không null)
+        response.setTotalLikes(food.getTotalLikes() != null ? food.getTotalLikes() : 0);
+        response.setTotalShares(food.getTotalShares() != null ? food.getTotalShares() : 0);
+
         return response;
     }
 

@@ -51,6 +51,12 @@ public class Food {
         @Column(name = "stock_quantity")
         private Integer stockQuantity;
 
+        @Column(name = "total_likes")
+        private Integer totalLikes;
+
+        @Column(name = "total_shares")
+        private Integer totalShares;
+
         @Column(name = "is_active")
         private Boolean isActive;
 

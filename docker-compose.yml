@@ -99,6 +99,10 @@ services:
       # Frontend URL
       RESET_PASSWORD_URL: ${RESET_PASSWORD_URL}
 
+        # Google OAuth 2.0 configuration
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
       # Redis configuration (cho cache)
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379

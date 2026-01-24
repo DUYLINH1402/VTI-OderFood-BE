@@ -13,7 +13,7 @@ public class UserLoginRequest {
 
     @Schema(
         description = "Tên đăng nhập hoặc email của người dùng",
-        example = "user@example.com",
+        example = "user@gmail.com",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotBlank(message = "LOGIN_REQUIRED")
@@ -21,7 +21,7 @@ public class UserLoginRequest {
 
     @Schema(
         description = "Mật khẩu đăng nhập (tối thiểu 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt)",
-        example = "Password@123",
+        example = "A123456",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotBlank(message = "PASSWORD_REQUIRED")
