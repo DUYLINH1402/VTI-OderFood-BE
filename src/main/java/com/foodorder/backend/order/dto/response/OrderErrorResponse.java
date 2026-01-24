@@ -1,5 +1,6 @@
 package com.foodorder.backend.order.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 @Getter
@@ -7,10 +8,19 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Response chứa thông tin lỗi khi xử lý đơn hàng")
 public class OrderErrorResponse {
+
+    @Schema(description = "Trạng thái thành công hay thất bại", example = "false")
     private boolean success;
+
+    @Schema(description = "Thông báo lỗi chi tiết", example = "Số điểm không đủ để sử dụng")
     private String message;
+
+    @Schema(description = "Mã lỗi chuẩn hóa", example = "INSUFFICIENT_POINTS")
     private String errorCode;
+
+    @Schema(description = "Timestamp của lỗi (Unix milliseconds)", example = "1705744800000")
     private long timestamp;
 
     // Các error codes phổ biến cho Order

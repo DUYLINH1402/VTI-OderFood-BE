@@ -23,7 +23,7 @@ nano .env  # hoặc vim, code...
 docker-compose up -d --build
 
 # Xem logs
-docker-compose logs -f
+docker compose logs -f
 
 # Chỉ xem logs của backend
 docker-compose logs -f backend

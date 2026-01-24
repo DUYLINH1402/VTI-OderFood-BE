@@ -1,5 +1,6 @@
 package com.foodorder.backend.auth.service.impl;
 
+import com.foodorder.backend.auth.dto.request.GoogleLoginRequest;
 import com.foodorder.backend.auth.dto.request.UserLoginRequest;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.auth.dto.request.UserRegisterRequest;
@@ -20,10 +21,16 @@ import com.foodorder.backend.points.entity.RewardPoint;
 import com.foodorder.backend.points.entity.PointHistory;
 import com.foodorder.backend.points.entity.PointType;
 import com.foodorder.backend.points.repository.RewardPointRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +53,12 @@ public class AuthServiceImpl implements AuthService {
     private final RewardPointRepository rewardPointRepository;
 
     private final RoleRepository roleRepository;
+
+    /**
+     * Google Client ID để verify ID Token từ Google OAuth
+     */
+    @Value("${google.client-id}")
+    private String googleClientId;
 
     @Override
     public UserResponse registerUser(UserRegisterRequest request) {
@@ -209,6 +222,171 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Đăng nhập bằng Google OAuth 2.0
+     * Quy trình:
+     * 1. Verify ID Token với Google
+     * 2. Lấy thông tin user từ token (email, name, avatar)
+     * 3. Kiểm tra user đã tồn tại chưa:
+     *    - Chưa có: Tạo mới user với authProvider = GOOGLE
+     *    - Có rồi: Cập nhật thông tin (avatar, tên)
+     * 4. Tạo JWT token nội bộ và trả về
+     */
+    @Override
+    public UserResponse loginWithGoogle(GoogleLoginRequest request) {
+        // Bước 1: Verify ID Token với Google
+        GoogleIdToken.Payload payload = verifyGoogleToken(request.getIdToken());
+
+        String email = payload.getEmail();
+        String fullName = (String) payload.get("name");
+        String avatarUrl = (String) payload.get("picture");
+        boolean emailVerified = payload.getEmailVerified();
+
+        if (!emailVerified) {
+            throw new BadRequestException("Email Google chưa được xác minh", "GOOGLE_EMAIL_NOT_VERIFIED");
+        }
+
+        // Bước 2: Kiểm tra user đã tồn tại chưa
+        Optional<User> existingUserOpt = userRepository.findByEmail(email);
+        User user;
+
+        if (existingUserOpt.isPresent()) {
+            // User đã tồn tại → Cập nhật thông tin
+            user = existingUserOpt.get();
+
+            // Kiểm tra tài khoản có bị khóa không
+            if (!user.isActive()) {
+                throw new BadRequestException("Tài khoản đã bị khóa", "USER_LOCKED");
+            }
+
+            // Cập nhật thông tin từ Google (avatar, tên nếu chưa có)
+            if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                user.setAvatarUrl(avatarUrl);
+            }
+            if (fullName != null && !fullName.isEmpty() && user.getFullName() == null) {
+                user.setFullName(fullName);
+            }
+
+            // Nếu user chưa verify email nhưng đăng nhập Google thành công → verify luôn
+            // Vì Google đã xác minh email rồi
+            if (!user.isVerified()) {
+                user.setVerified(true);
+            }
+
+            // Cập nhật authProvider nếu user đăng ký bằng email thông thường trước đó
+            if (!"GOOGLE".equals(user.getAuthProvider())) {
+                user.setAuthProvider("GOOGLE");
+            }
+
+            // Cập nhật thời gian đăng nhập
+            user.setLastLogin(LocalDateTime.now());
+            userRepository.save(user);
+
+        } else {
+            // User chưa tồn tại → Tạo mới
+            user = createGoogleUser(email, fullName, avatarUrl);
+        }
+
+        // Bước 3: Tạo JWT token nội bộ
+        String jwtToken = jwtUtil.generateToken(user);
+
+        // Bước 4: Trả về response
+        UserResponse response = UserResponse.fromEntity(user);
+        response.setToken(jwtToken);
+        return response;
+    }
+
+    /**
+     * Verify ID Token với Google Server
+     * @param idToken ID Token từ Google OAuth
+     * @return Payload chứa thông tin user
+     */
+    private GoogleIdToken.Payload verifyGoogleToken(String idToken) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(),
+                    GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken googleIdToken = verifier.verify(idToken);
+
+            if (googleIdToken == null) {
+                throw new BadRequestException("Token Google không hợp lệ hoặc đã hết hạn", "INVALID_GOOGLE_TOKEN");
+            }
+
+            return googleIdToken.getPayload();
+
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BadRequestException("Không thể xác thực token Google: " + e.getMessage(), "GOOGLE_VERIFICATION_FAILED");
+        }
+    }
+
+    /**
+     * Tạo mới user từ thông tin Google
+     * @param email Email từ Google
+     * @param fullName Tên đầy đủ từ Google
+     * @param avatarUrl URL avatar từ Google
+     * @return User mới được tạo
+     */
+    private User createGoogleUser(String email, String fullName, String avatarUrl) {
+        // Tạo username từ email (lấy phần trước @)
+        String baseUsername = email.split("@")[0];
+        String username = baseUsername;
+
+        // Kiểm tra username đã tồn tại chưa, nếu có thì thêm số random
+        int counter = 1;
+        while (userRepository.existsByUsername(username)) {
+            username = baseUsername + counter;
+            counter++;
+        }
+
+        // Lấy role CUSTOMER từ database
+        Role customerRole = roleRepository.findByCode("ROLE_USER")
+                .orElseThrow(() -> new BadRequestException("Role mặc định không tồn tại", "ROLE_NOT_FOUND"));
+
+        // Tạo mật khẩu random (user không cần dùng vì đăng nhập qua Google)
+        String randomPassword = UUID.randomUUID().toString();
+
+        User newUser = User.builder()
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(randomPassword))
+                .fullName(fullName)
+                .avatarUrl(avatarUrl)
+                .authProvider("GOOGLE")
+                .isActive(true)
+                .isVerified(true) // Google đã xác minh email
+                .role(customerRole)
+                .lastLogin(LocalDateTime.now())
+                .build();
+
+        userRepository.save(newUser);
+
+        // Tạo RewardPoint cho user mới với balance = 10000
+        RewardPoint rewardPoint = RewardPoint.builder()
+                .user(newUser)
+                .balance(10000)
+                .lastUpdated(LocalDateTime.now())
+                .build();
+        rewardPointRepository.save(rewardPoint);
+
+        // Lưu log vào point_history khi tạo RewardPoint cho user mới
+        PointHistory pointHistory = PointHistory.builder()
+                .userId(newUser.getId())
+                .type(PointType.EARN)
+                .amount(10000)
+                .orderId(null)
+                .description("Tặng điểm khi đăng ký qua Google")
+                .createdAt(LocalDateTime.now())
+                .build();
+        pointHistoryRepository.save(pointHistory);
+
+        return newUser;
     }
 
 }

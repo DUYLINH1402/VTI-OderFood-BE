@@ -1,5 +1,6 @@
 package com.foodorder.backend.coupons.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.util.List;
 import java.util.Map;
@@ -12,27 +13,50 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Response chứa thống kê tổng quan về mã giảm giá")
 public class CouponStatisticsResponse {
 
     // === TỔNG QUAN ===
-    private Long totalCoupons;           // Tổng số coupon
-    private Long activeCoupons;          // Số coupon đang hoạt động
-    private Long expiredCoupons;         // Số coupon đã hết hạn
-    private Long inactiveCoupons;        // Số coupon bị vô hiệu hóa
-    private Long usedOutCoupons;         // Số coupon đã hết lượt sử dụng
+    @Schema(description = "Tổng số coupon", example = "50")
+    private Long totalCoupons;
+
+    @Schema(description = "Số coupon đang hoạt động", example = "30")
+    private Long activeCoupons;
+
+    @Schema(description = "Số coupon đã hết hạn", example = "15")
+    private Long expiredCoupons;
+
+    @Schema(description = "Số coupon bị vô hiệu hóa", example = "5")
+    private Long inactiveCoupons;
+
+    @Schema(description = "Số coupon đã hết lượt sử dụng", example = "10")
+    private Long usedOutCoupons;
 
     // === THỐNG KÊ SỬ DỤNG ===
-    private Long totalUsageCount;        // Tổng lượt sử dụng coupon
-    private Double totalDiscountAmount;  // Tổng số tiền giảm giá
-    private Double averageDiscountAmount; // Số tiền giảm giá trung bình mỗi lần
+    @Schema(description = "Tổng lượt sử dụng coupon", example = "1500")
+    private Long totalUsageCount;
+
+    @Schema(description = "Tổng số tiền giảm giá (VND)", example = "15000000")
+    private Double totalDiscountAmount;
+
+    @Schema(description = "Số tiền giảm giá trung bình mỗi lần (VND)", example = "10000")
+    private Double averageDiscountAmount;
 
     // === PHÂN BỔ THEO LOẠI ===
-    private Map<String, Long> couponsByType;     // Số lượng theo loại (PUBLIC, PRIVATE, FIRST_ORDER)
-    private Map<String, Long> couponsByStatus;   // Số lượng theo trạng thái
-    private Map<String, Long> couponsByDiscountType; // Số lượng theo loại giảm giá (PERCENT, AMOUNT)
+    @Schema(description = "Số lượng theo loại coupon", example = "{\"PUBLIC\": 25, \"PRIVATE\": 15, \"FIRST_ORDER\": 10}")
+    private Map<String, Long> couponsByType;
+
+    @Schema(description = "Số lượng theo trạng thái", example = "{\"ACTIVE\": 30, \"INACTIVE\": 5, \"EXPIRED\": 15}")
+    private Map<String, Long> couponsByStatus;
+
+    @Schema(description = "Số lượng theo loại giảm giá", example = "{\"PERCENT\": 35, \"FIXED\": 15}")
+    private Map<String, Long> couponsByDiscountType;
 
     // === HIỆU SUẤT ===
-    private Double usageRate;            // Tỷ lệ sử dụng (%)
-    private Double activeRate;           // Tỷ lệ coupon đang hoạt động (%)
+    @Schema(description = "Tỷ lệ sử dụng (%)", example = "65.5")
+    private Double usageRate;
+
+    @Schema(description = "Tỷ lệ coupon đang hoạt động (%)", example = "60.0")
+    private Double activeRate;
 }
 

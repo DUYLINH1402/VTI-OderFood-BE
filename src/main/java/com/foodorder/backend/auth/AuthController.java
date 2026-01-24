@@ -1,5 +1,6 @@
 package com.foodorder.backend.auth;
 
+import com.foodorder.backend.auth.dto.request.GoogleLoginRequest;
 import com.foodorder.backend.auth.dto.request.ResetPasswordRequest;
 import com.foodorder.backend.auth.dto.request.UserLoginRequest;
 import com.foodorder.backend.auth.dto.request.UserRegisterRequest;
@@ -85,6 +86,24 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UserResponse> login(@RequestBody @Valid UserLoginRequest request) {
         return ResponseEntity.ok(authService.loginUser(request));
+    }
+
+    /**
+     * Đăng nhập bằng Google OAuth 2.0
+     * Frontend gửi ID Token từ Google, Backend verify và trả về JWT token nội bộ
+     */
+    @Operation(summary = "Đăng nhập bằng Google",
+               description = "Đăng nhập bằng Google OAuth 2.0. Frontend gửi ID Token, Backend verify với Google và trả về JWT token nội bộ. " +
+                           "Nếu user chưa tồn tại sẽ tự động tạo mới.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Đăng nhập thành công",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Token Google không hợp lệ hoặc đã hết hạn"),
+            @ApiResponse(responseCode = "403", description = "Tài khoản đã bị khóa")
+    })
+    @PostMapping("/google")
+    public ResponseEntity<UserResponse> loginWithGoogle(@RequestBody @Valid GoogleLoginRequest request) {
+        return ResponseEntity.ok(authService.loginWithGoogle(request));
     }
 
     @Operation(summary = "Xác thực email", description = "Xác thực email người dùng thông qua token được gửi qua email. Token có hiệu lực trong 24 giờ.")

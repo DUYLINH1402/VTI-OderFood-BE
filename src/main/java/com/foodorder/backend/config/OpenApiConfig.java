@@ -1,3 +1,4 @@
+
 package com.foodorder.backend.config;
 
 import io.swagger.v3.oas.models.Components;
@@ -17,7 +18,6 @@ import java.util.List;
 
 /**
  * Cấu hình OpenAPI (Swagger) cho API documentation
- * Swagger UI: /swagger-ui.html hoặc /swagger-ui/index.html
  * OpenAPI JSON: /v3/api-docs
  *
  * API được chia thành các nhóm theo Role:

@@ -1,5 +1,6 @@
 package com.foodorder.backend.dashboard.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,26 +17,19 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Response chứa danh sách top món ăn bán chạy")
 public class TopSellingFoodResponse {
 
-    /**
-     * Danh sách top món ăn bán chạy
-     */
+    @Schema(description = "Danh sách top món ăn bán chạy")
     private List<TopFoodItem> topFoods;
 
-    /**
-     * Tổng doanh thu của các món bán chạy
-     */
+    @Schema(description = "Tổng doanh thu của các món bán chạy (VND)", example = "5000000")
     private BigDecimal totalRevenue;
 
-    /**
-     * Tổng số lượng bán của các món bán chạy
-     */
+    @Schema(description = "Tổng số lượng bán của các món bán chạy", example = "500")
     private Long totalQuantitySold;
 
-    /**
-     * Khoảng thời gian thống kê (7, 30, 90 ngày)
-     */
+    @Schema(description = "Khoảng thời gian thống kê (7, 30, 90 ngày)", example = "30")
     private Integer periodDays;
 
     /**
@@ -45,45 +39,30 @@ public class TopSellingFoodResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(description = "Thông tin món ăn bán chạy")
     public static class TopFoodItem {
-        /**
-         * ID món ăn
-         */
+        @Schema(description = "ID món ăn", example = "1")
         private Long foodId;
 
-        /**
-         * Tên món ăn
-         */
+        @Schema(description = "Tên món ăn", example = "Phở bò tái")
         private String foodName;
 
-        /**
-         * Slug món ăn
-         */
+        @Schema(description = "Slug món ăn", example = "pho-bo-tai")
         private String foodSlug;
 
-        /**
-         * Ảnh đại diện
-         */
+        @Schema(description = "URL ảnh đại diện", example = "https://example.com/pho.jpg")
         private String imageUrl;
 
-        /**
-         * Tên danh mục
-         */
+        @Schema(description = "Tên danh mục", example = "Món chính")
         private String categoryName;
 
-        /**
-         * Số lượng đã bán
-         */
+        @Schema(description = "Số lượng đã bán", example = "150")
         private Long quantitySold;
 
-        /**
-         * Doanh thu từ món này
-         */
+        @Schema(description = "Doanh thu từ món này (VND)", example = "8250000")
         private BigDecimal revenue;
 
-        /**
-         * Tỷ lệ % so với tổng doanh thu top 5
-         */
+        @Schema(description = "Tỷ lệ % so với tổng doanh thu top 5", example = "25.5")
         private Double revenuePercentage;
     }
 }

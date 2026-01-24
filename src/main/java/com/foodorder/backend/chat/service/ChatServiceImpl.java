@@ -196,29 +196,27 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional(readOnly = true)
     public List<ChatMessageResponse> getChatHistoryForUser(User user) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            List<ChatMessage> messages = chatMessageRepository.findVisibleMessagesForUserInConversation(conversation);
-            return messages.stream()
-                    .map(this::convertToResponseWithReplyReference)
-                    .collect(Collectors.toList());
-        } catch (ResourceNotFoundException e) {
-            // User chưa có conversation nào
-            return List.of();
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(conversation -> {
+                    List<ChatMessage> messages = chatMessageRepository.findVisibleMessagesForUserInConversation(conversation);
+                    return messages.stream()
+                            .map(this::convertToResponseWithReplyReference)
+                            .collect(Collectors.toList());
+                })
+                .orElse(List.of()); // User mới chưa có conversation thì trả về list rỗng
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ChatMessageResponse> getChatHistoryForUserPageable(User user, Pageable pageable) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            Page<ChatMessage> messages = chatMessageRepository.findVisibleMessagesForUserInConversationPageable(conversation, pageable);
-            return messages.map(this::convertToResponseWithReplyReference);
-        } catch (ResourceNotFoundException e) {
-            // User chưa có conversation nào - trả về page rỗng
-            return Page.empty(pageable);
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(conversation -> {
+                    Page<ChatMessage> messages = chatMessageRepository.findVisibleMessagesForUserInConversationPageable(conversation, pageable);
+                    return messages.map(this::convertToResponseWithReplyReference);
+                })
+                .orElse(Page.empty(pageable)); // User mới chưa có conversation thì trả về page rỗng
     }
 
     @Override
@@ -313,15 +311,15 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional(readOnly = true)
     public List<ChatMessageResponse> getDeletedMessagesByUser(User user) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            List<ChatMessage> deletedMessages = chatMessageRepository.findUserDeletedMessagesInConversation(conversation);
-            return deletedMessages.stream()
-                    .map(ChatMessageResponse::fromEntity)
-                    .collect(Collectors.toList());
-        } catch (ResourceNotFoundException e) {
-            return List.of();
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(conversation -> {
+                    List<ChatMessage> deletedMessages = chatMessageRepository.findUserDeletedMessagesInConversation(conversation);
+                    return deletedMessages.stream()
+                            .map(ChatMessageResponse::fromEntity)
+                            .collect(Collectors.toList());
+                })
+                .orElse(List.of()); // User mới chưa có conversation thì trả về list rỗng
     }
 
     @Override
@@ -339,34 +337,28 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional(readOnly = true)
     public Long countUnreadMessagesForUser(User user) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            return chatMessageRepository.countUnreadMessagesForUser(conversation);
-        } catch (ResourceNotFoundException e) {
-            return 0L;
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(chatMessageRepository::countUnreadMessagesForUser)
+                .orElse(0L); // User mới chưa có conversation thì trả về 0
     }
 
     @Override
     @Transactional(readOnly = true)
     public Long countTotalMessagesFromUser(User user) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            return chatMessageRepository.countTotalMessagesFromUser(conversation);
-        } catch (ResourceNotFoundException e) {
-            return 0L;
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(chatMessageRepository::countTotalMessagesFromUser)
+                .orElse(0L); // User mới chưa có conversation thì trả về 0
     }
 
     @Override
     @Transactional(readOnly = true)
     public Long countUnreadMessagesFromUserForStaff(User user) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            return chatMessageRepository.countUnreadMessagesFromUserForStaff(conversation);
-        } catch (ResourceNotFoundException e) {
-            return 0L;
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(chatMessageRepository::countUnreadMessagesFromUserForStaff)
+                .orElse(0L); // User mới chưa có conversation thì trả về 0
     }
 
     @Override
@@ -385,16 +377,16 @@ public class ChatServiceImpl implements ChatService {
     @Override
     @Transactional(readOnly = true)
     public List<ChatMessageResponse> getUnreadMessagesForUser(User user) {
-        try {
-            Conversation conversation = conversationService.getConversationByUser(user);
-            List<ChatMessage> messages = chatMessageRepository.findVisibleMessagesForUserInConversation(conversation);
-            return messages.stream()
-                    .filter(msg -> msg.getReadAt() == null && msg.getMessageType() == ChatMessage.MessageType.STAFF_TO_USER)
-                    .map(this::convertToResponseWithReplyReference)
-                    .collect(Collectors.toList());
-        } catch (ResourceNotFoundException e) {
-            return List.of();
-        }
+        // Sử dụng findConversationByUser để tránh throw exception gây rollback transaction
+        return conversationService.findConversationByUser(user)
+                .map(conversation -> {
+                    List<ChatMessage> messages = chatMessageRepository.findVisibleMessagesForUserInConversation(conversation);
+                    return messages.stream()
+                            .filter(msg -> msg.getReadAt() == null && msg.getMessageType() == ChatMessage.MessageType.STAFF_TO_USER)
+                            .map(this::convertToResponseWithReplyReference)
+                            .collect(Collectors.toList());
+                })
+                .orElse(List.of()); // User mới chưa có conversation thì trả về list rỗng
     }
 
     // ========== STAFF MANAGEMENT ==========

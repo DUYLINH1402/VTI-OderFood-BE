@@ -57,6 +57,12 @@ app:
     reset-password-url: ${RESET_PASSWORD_URL}
 
 # ===========================================
+# Google OAuth 2.0 Configuration
+# ===========================================
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+
+# ===========================================
 # ZaloPay Configuration
 # ===========================================
 zalopay:
