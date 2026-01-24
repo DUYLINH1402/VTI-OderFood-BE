@@ -41,16 +41,25 @@ public class User {
     @Column(name = "address", length = 255)
     private String address;
 
+    /**
+     * Provider xác thực: LOCAL (đăng ký thông thường), GOOGLE (đăng nhập qua Google OAuth)
+     */
+    @Column(name = "auth_provider", length = 20)
+    @Builder.Default
+    private String authProvider = "LOCAL";
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
     @JsonIgnore // Tránh infinite recursion khi serialize JSON
     private Role role;
 
     @Column(name = "is_active")
-    private boolean isActive;
+    @Builder.Default
+    private boolean isActive = true;
 
     @Column(name = "is_verified")
-    private boolean isVerified;
+    @Builder.Default
+    private boolean isVerified = false;
 
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private RewardPoint rewardPoint;
@@ -70,9 +79,9 @@ public class User {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
 
-        isActive = true; // Mặc định là hoạt động
-        isVerified = false; // Chưa xác minh email
-        // role sẽ được set từ bên ngoài khi tạo user
+        // Chỉ set mặc định nếu chưa được set từ bên ngoài
+        // (quan trọng cho Google OAuth vì isVerified=true được set trước khi save)
+        // isActive và isVerified không cần ghi đè nếu đã được set trong Builder
     }
 
     // Chạy trước khi UPDATE → cập nhật updatedAt

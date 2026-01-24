@@ -1,5 +1,6 @@
 package com.foodorder.backend.dashboard.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,66 +16,43 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Response chứa thống kê nâng cao cho Dashboard")
 public class AdvancedStatisticsResponse {
 
-    /**
-     * Average Order Value - Giá trị đơn hàng trung bình
-     */
+    @Schema(description = "Average Order Value - Giá trị đơn hàng trung bình (VND)", example = "85000")
     private BigDecimal aov;
 
-    /**
-     * Tỷ lệ thay đổi AOV so với kỳ trước (%)
-     */
+    @Schema(description = "Tỷ lệ thay đổi AOV so với kỳ trước (%)", example = "5.5")
     private Double aovChangePercent;
 
-    /**
-     * Tổng số đơn hàng trong kỳ
-     */
+    @Schema(description = "Tổng số đơn hàng trong kỳ", example = "500")
     private Long totalOrders;
 
-    /**
-     * Số đơn hàng bị hủy
-     */
+    @Schema(description = "Số đơn hàng bị hủy", example = "15")
     private Long cancelledOrders;
 
-    /**
-     * Tỷ lệ hủy đơn (%)
-     */
+    @Schema(description = "Tỷ lệ hủy đơn (%)", example = "3.0")
     private Double cancellationRate;
 
-    /**
-     * Tỷ lệ thay đổi tỷ lệ hủy so với kỳ trước (%)
-     */
+    @Schema(description = "Tỷ lệ thay đổi tỷ lệ hủy so với kỳ trước (%)", example = "-2.5")
     private Double cancellationRateChangePercent;
 
-    /**
-     * Số khách hàng mới trong kỳ
-     */
+    @Schema(description = "Số khách hàng mới trong kỳ", example = "50")
     private Long newCustomers;
 
-    /**
-     * Tỷ lệ thay đổi khách hàng mới so với kỳ trước (%)
-     */
+    @Schema(description = "Tỷ lệ thay đổi khách hàng mới so với kỳ trước (%)", example = "10.0")
     private Double newCustomersChangePercent;
 
-    /**
-     * Tổng điểm thưởng đã sử dụng trong kỳ
-     */
+    @Schema(description = "Tổng điểm thưởng đã sử dụng trong kỳ", example = "5000")
     private Long pointsUsed;
 
-    /**
-     * Tỷ lệ thay đổi điểm thưởng đã dùng so với kỳ trước (%)
-     */
+    @Schema(description = "Tỷ lệ thay đổi điểm thưởng đã dùng so với kỳ trước (%)", example = "15.0")
     private Double pointsUsedChangePercent;
 
-    /**
-     * Giá trị quy đổi từ điểm thưởng (VND)
-     */
+    @Schema(description = "Giá trị quy đổi từ điểm thưởng (VND)", example = "50000")
     private BigDecimal pointsDiscountValue;
 
-    /**
-     * Khoảng thời gian thống kê (7, 30, 90 ngày)
-     */
+    @Schema(description = "Khoảng thời gian thống kê (7, 30, 90 ngày)", example = "30")
     private Integer periodDays;
 }
 

@@ -1,5 +1,6 @@
 package com.foodorder.backend.dashboard.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,31 +17,22 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Response chứa chi tiết hiệu quả từng món ăn")
 public class FoodPerformanceResponse {
 
-    /**
-     * Danh sách hiệu quả từng món ăn
-     */
+    @Schema(description = "Danh sách hiệu quả từng món ăn")
     private List<FoodPerformanceItem> foods;
 
-    /**
-     * Tổng số món ăn
-     */
+    @Schema(description = "Tổng số món ăn", example = "50")
     private Integer totalFoods;
 
-    /**
-     * Trang hiện tại
-     */
+    @Schema(description = "Trang hiện tại", example = "0")
     private Integer currentPage;
 
-    /**
-     * Tổng số trang
-     */
+    @Schema(description = "Tổng số trang", example = "5")
     private Integer totalPages;
 
-    /**
-     * Khoảng thời gian thống kê (7, 30, 90 ngày)
-     */
+    @Schema(description = "Khoảng thời gian thống kê (7, 30, 90 ngày)", example = "30")
     private Integer periodDays;
 
     /**
@@ -50,66 +42,42 @@ public class FoodPerformanceResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(description = "Thông tin hiệu quả một món ăn")
     public static class FoodPerformanceItem {
-        /**
-         * ID món ăn
-         */
+        @Schema(description = "ID món ăn", example = "1")
         private Long foodId;
 
-        /**
-         * Tên món ăn
-         */
+        @Schema(description = "Tên món ăn", example = "Phở bò tái")
         private String foodName;
 
-        /**
-         * Slug món ăn
-         */
+        @Schema(description = "Slug món ăn", example = "pho-bo-tai")
         private String foodSlug;
 
-        /**
-         * Ảnh đại diện
-         */
+        @Schema(description = "URL ảnh đại diện", example = "https://example.com/pho.jpg")
         private String imageUrl;
 
-        /**
-         * Tên danh mục
-         */
+        @Schema(description = "Tên danh mục", example = "Món chính")
         private String categoryName;
 
-        /**
-         * Số đơn hàng có món này
-         */
+        @Schema(description = "Số đơn hàng có món này", example = "100")
         private Long orderCount;
 
-        /**
-         * Số lượng đã bán
-         */
+        @Schema(description = "Số lượng đã bán", example = "150")
         private Long quantitySold;
 
-        /**
-         * Doanh thu từ món này
-         */
+        @Schema(description = "Doanh thu từ món này (VND)", example = "8250000")
         private BigDecimal revenue;
 
-        /**
-         * Điểm đánh giá trung bình (0-5)
-         */
+        @Schema(description = "Điểm đánh giá trung bình (0-5)", example = "4.5")
         private Double averageRating;
 
-        /**
-         * Số lượng đánh giá
-         */
+        @Schema(description = "Số lượng đánh giá", example = "50")
         private Long reviewCount;
 
-        /**
-         * Xu hướng: UP (tăng), DOWN (giảm), STABLE (ổn định)
-         * So sánh với kỳ trước
-         */
+        @Schema(description = "Xu hướng so với kỳ trước", example = "UP", allowableValues = {"UP", "DOWN", "STABLE", "NEW"})
         private TrendType trend;
 
-        /**
-         * Tỷ lệ thay đổi doanh thu so với kỳ trước (%)
-         */
+        @Schema(description = "Tỷ lệ thay đổi doanh thu so với kỳ trước (%)", example = "15.5")
         private Double trendPercentage;
     }
 
@@ -123,4 +91,3 @@ public class FoodPerformanceResponse {
         NEW      // Món mới, chưa có dữ liệu kỳ trước
     }
 }
-

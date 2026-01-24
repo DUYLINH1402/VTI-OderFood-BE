@@ -1,5 +1,6 @@
 package com.foodorder.backend.dashboard.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,21 +17,16 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "Response chứa cơ cấu doanh thu theo danh mục món ăn")
 public class RevenueByCategoryResponse {
 
-    /**
-     * Danh sách cơ cấu doanh thu (3 nhóm chính + 1 nhóm Khác)
-     */
+    @Schema(description = "Danh sách cơ cấu doanh thu (3 nhóm chính + 1 nhóm Khác)")
     private List<CategoryRevenue> categories;
 
-    /**
-     * Tổng doanh thu tất cả các nhóm
-     */
+    @Schema(description = "Tổng doanh thu tất cả các nhóm (VND)", example = "15000000")
     private BigDecimal totalRevenue;
 
-    /**
-     * Khoảng thời gian thống kê (7, 30, 90 ngày)
-     */
+    @Schema(description = "Khoảng thời gian thống kê (7, 30, 90 ngày)", example = "30")
     private Integer periodDays;
 
     /**
@@ -40,46 +36,30 @@ public class RevenueByCategoryResponse {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(description = "Doanh thu theo danh mục")
     public static class CategoryRevenue {
-        /**
-         * ID danh mục (null nếu là nhóm "Khác")
-         */
+        @Schema(description = "ID danh mục (null nếu là nhóm 'Khác')", example = "1")
         private Long categoryId;
 
-        /**
-         * Tên danh mục
-         */
+        @Schema(description = "Tên danh mục", example = "Món chính")
         private String categoryName;
 
-        /**
-         * Slug danh mục
-         */
+        @Schema(description = "Slug danh mục", example = "mon-chinh")
         private String categorySlug;
 
-        /**
-         * Doanh thu của danh mục
-         */
+        @Schema(description = "Doanh thu của danh mục (VND)", example = "5000000")
         private BigDecimal revenue;
 
-        /**
-         * Tỷ lệ % doanh thu so với tổng
-         */
+        @Schema(description = "Tỷ lệ % doanh thu so với tổng", example = "33.3")
         private Double percentage;
 
-        /**
-         * Số lượng đơn hàng có món thuộc danh mục này
-         */
+        @Schema(description = "Số lượng đơn hàng có món thuộc danh mục này", example = "100")
         private Long orderCount;
 
-        /**
-         * Số lượng món đã bán thuộc danh mục này
-         */
+        @Schema(description = "Số lượng món đã bán thuộc danh mục này", example = "200")
         private Long quantitySold;
 
-        /**
-         * Màu sắc cho biểu đồ (tùy chọn)
-         */
+        @Schema(description = "Màu sắc cho biểu đồ", example = "#FF6384")
         private String color;
     }
 }
-

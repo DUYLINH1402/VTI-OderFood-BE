@@ -1,5 +1,6 @@
 package com.foodorder.backend.points.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.util.Map;
 
@@ -11,27 +12,50 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Response chứa thống kê tổng quan về điểm thưởng")
 public class PointsStatisticsResponse {
 
     // === TỔNG QUAN HỆ THỐNG ===
-    private Long totalUsersWithPoints;       // Tổng số user có điểm
-    private Long totalPointsInSystem;        // Tổng điểm trong hệ thống
-    private Long totalPointsEarned;          // Tổng điểm đã tích lũy
-    private Long totalPointsUsed;            // Tổng điểm đã sử dụng
-    private Long totalPointsRefunded;        // Tổng điểm đã hoàn lại
-    private Long totalPointsExpired;         // Tổng điểm đã hết hạn
+    @Schema(description = "Tổng số user có điểm", example = "1500")
+    private Long totalUsersWithPoints;
+
+    @Schema(description = "Tổng điểm trong hệ thống", example = "500000")
+    private Long totalPointsInSystem;
+
+    @Schema(description = "Tổng điểm đã tích lũy", example = "800000")
+    private Long totalPointsEarned;
+
+    @Schema(description = "Tổng điểm đã sử dụng", example = "300000")
+    private Long totalPointsUsed;
+
+    @Schema(description = "Tổng điểm đã hoàn lại", example = "10000")
+    private Long totalPointsRefunded;
+
+    @Schema(description = "Tổng điểm đã hết hạn", example = "5000")
+    private Long totalPointsExpired;
 
     // === TRUNG BÌNH ===
-    private Double averagePointsPerUser;     // Điểm trung bình mỗi user
-    private Double averagePointsEarnedPerOrder; // Điểm trung bình tích lũy mỗi đơn
-    private Double averagePointsUsedPerOrder;   // Điểm trung bình sử dụng mỗi đơn
+    @Schema(description = "Điểm trung bình mỗi user", example = "333.33")
+    private Double averagePointsPerUser;
+
+    @Schema(description = "Điểm trung bình tích lũy mỗi đơn", example = "50")
+    private Double averagePointsEarnedPerOrder;
+
+    @Schema(description = "Điểm trung bình sử dụng mỗi đơn", example = "100")
+    private Double averagePointsUsedPerOrder;
 
     // === PHÂN BỔ THEO LOẠI ===
-    private Map<String, Long> pointsByType;  // Tổng điểm theo loại (EARN, USE, REFUND, EXPIRE)
-    private Map<String, Long> transactionsByType; // Số giao dịch theo loại
+    @Schema(description = "Tổng điểm theo loại", example = "{\"EARN\": 800000, \"USE\": 300000, \"REFUND\": 10000}")
+    private Map<String, Long> pointsByType;
+
+    @Schema(description = "Số giao dịch theo loại", example = "{\"EARN\": 5000, \"USE\": 2000, \"REFUND\": 100}")
+    private Map<String, Long> transactionsByType;
 
     // === TỶ LỆ ===
-    private Double usageRate;                // Tỷ lệ sử dụng điểm (%)
-    private Double retentionRate;            // Tỷ lệ giữ lại điểm (%)
+    @Schema(description = "Tỷ lệ sử dụng điểm (%)", example = "37.5")
+    private Double usageRate;
+
+    @Schema(description = "Tỷ lệ giữ lại điểm (%)", example = "62.5")
+    private Double retentionRate;
 }
 

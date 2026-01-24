@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service triển khai cho Conversation - quản lý cuộc trò chuyện duy nhất giữa User và Staff
@@ -46,6 +47,12 @@ public class ConversationServiceImpl implements ConversationService {
         return conversationRepository.findByUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("CONVERSATION_NOT_FOUND",
                     "Không tìm thấy cuộc trò chuyện của user"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Conversation> findConversationByUser(User user) {
+        return conversationRepository.findByUser(user);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.foodorder.backend.food.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 /**
@@ -11,18 +12,19 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Request params để lọc danh sách món ăn")
 public class FoodFilterRequest {
 
-    // Lọc theo tên món ăn (tìm kiếm gần đúng)
+    @Schema(description = "Lọc theo tên món ăn (tìm kiếm gần đúng)", example = "phở")
     private String name;
 
-    // Lọc theo trạng thái (AVAILABLE, UNAVAILABLE)
+    @Schema(description = "Lọc theo trạng thái món ăn", example = "AVAILABLE", allowableValues = {"AVAILABLE", "UNAVAILABLE"})
     private String status;
 
-    // Lọc theo ID danh mục
+    @Schema(description = "Lọc theo ID danh mục", example = "1")
     private Long categoryId;
 
-    // Lọc theo trạng thái hoạt động
+    @Schema(description = "Lọc theo trạng thái hoạt động", example = "true")
     private Boolean isActive;
 }
 

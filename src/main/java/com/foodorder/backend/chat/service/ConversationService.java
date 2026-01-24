@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service interface cho Conversation - quản lý cuộc trò chuyện duy nhất giữa User và Staff
@@ -19,9 +20,15 @@ public interface ConversationService {
     Conversation getOrCreateConversationForUser(User user);
 
     /**
-     * Lấy conversation của user (nếu có)
+     * Lấy conversation của user (nếu có) - throw exception nếu không tìm thấy
      */
     Conversation getConversationByUser(User user);
+
+    /**
+     * Tìm conversation của user - trả về Optional (không throw exception)
+     * Sử dụng cho các trường hợp user mới chưa có conversation
+     */
+    Optional<Conversation> findConversationByUser(User user);
 
     /**
      * Lấy conversation theo ID
