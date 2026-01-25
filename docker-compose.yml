@@ -102,6 +102,7 @@ services:
         # Google OAuth 2.0 configuration
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      OAUTH2_REDIRECT_URL: ${OAUTH2_REDIRECT_URL}
 
         # Facebook OAuth 2.0 configuration
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
