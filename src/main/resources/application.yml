@@ -86,7 +86,7 @@ brevo:
 app:
   frontend:
     reset-password-url: ${RESET_PASSWORD_URL}
-    oauth2-redirect-url: ${OAUTH2_REDIRECT_URL:http://localhost:5173/login-success}
+    oauth2-redirect-url: ${OAUTH2_REDIRECT_URL}
 
 # ===========================================
 # Google OAuth 2.0 Configuration
