@@ -27,6 +27,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findUserWithRoleById(@Param("userId") Long userId);
 
     /**
+     * Tìm User theo ID với Role và RewardPoint được fetch sẵn
+     * Dùng cho endpoint lấy profile đầy đủ (bao gồm điểm thưởng)
+     */
+    @Query("SELECT u FROM User u JOIN FETCH u.role LEFT JOIN FETCH u.rewardPoint WHERE u.id = :userId")
+    Optional<User> findUserWithRoleAndRewardPointById(@Param("userId") Long userId);
+
+    /**
+     * Tìm User theo email với Role và RewardPoint được fetch sẵn
+     * Dùng cho OAuth2 login flow
+     */
+    @Query("SELECT u FROM User u JOIN FETCH u.role LEFT JOIN FETCH u.rewardPoint WHERE u.email = :email")
+    Optional<User> findUserWithRoleAndRewardPointByEmail(@Param("email") String email);
+
+    /**
      * Tìm User theo username với Role được fetch sẵn để tránh lỗi lazy loading
      */
     @Query("SELECT u FROM User u JOIN FETCH u.role WHERE u.username = :username")

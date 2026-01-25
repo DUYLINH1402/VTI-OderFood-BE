@@ -25,6 +25,7 @@ RenewSSL_By_AWC_EC2.txt
 *.iws
 *.iml
 *.ipr
+*.md
 .env
 
 .DS_Store

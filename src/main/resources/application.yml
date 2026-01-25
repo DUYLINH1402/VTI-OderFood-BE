@@ -25,6 +25,37 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
 
+  # OAuth2 Client Configuration (Google & Facebook Authorization Code Flow)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+          facebook:
+            client-id: ${FACEBOOK_APP_ID}
+            client-secret: ${FACEBOOK_APP_SECRET}
+            scope:
+              - email
+              - public_profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+          facebook:
+            authorization-uri: https://www.facebook.com/v18.0/dialog/oauth
+            token-uri: https://graph.facebook.com/v18.0/oauth/access_token
+            user-info-uri: https://graph.facebook.com/me?fields=id,name,email,picture.width(250)
+            user-name-attribute: id
+
 # ===========================================
 # JWT Configuration
 # ===========================================
@@ -55,12 +86,21 @@ brevo:
 app:
   frontend:
     reset-password-url: ${RESET_PASSWORD_URL}
+    oauth2-redirect-url: ${OAUTH2_REDIRECT_URL:http://localhost:5173/login-success}
 
 # ===========================================
 # Google OAuth 2.0 Configuration
 # ===========================================
 google:
   client-id: ${GOOGLE_CLIENT_ID}
+  client-secret: ${GOOGLE_CLIENT_SECRET}
+
+# ===========================================
+# Facebook OAuth 2.0 Configuration
+# ===========================================
+facebook:
+  app-id: ${FACEBOOK_APP_ID}
+  app-secret: ${FACEBOOK_APP_SECRET}
 
 # ===========================================
 # ZaloPay Configuration
