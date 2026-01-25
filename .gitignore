@@ -27,7 +27,6 @@ RenewSSL_By_AWC_EC2.txt
 *.ipr
 *.md
 .env
-
 .DS_Store
 
 ### NetBeans ###

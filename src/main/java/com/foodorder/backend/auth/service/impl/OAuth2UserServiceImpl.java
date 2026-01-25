@@ -70,16 +70,22 @@ public class OAuth2UserServiceImpl implements OAuth2UserService {
 
     /**
      * Cập nhật thông tin user đã tồn tại từ OAuth2 provider
-     * Luôn cập nhật avatar và fullName từ provider (ưu tiên dữ liệu mới)
+     *
+     * QUAN TRỌNG:
+     * - KHÔNG ghi đè mật khẩu cũ để user vẫn có thể đăng nhập bằng email/password
+     * - Chỉ cập nhật avatar, fullName nếu chưa có (ưu tiên dữ liệu user đã tự cập nhật)
+     * - Cập nhật authProvider để cho phép đăng nhập bằng nhiều cách
      */
     private User updateExistingUser(User user, String fullName, String avatarUrl, String authProvider) {
-        // Luôn cập nhật avatar từ provider nếu có (dữ liệu mới nhất)
-        if (avatarUrl != null && !avatarUrl.isEmpty()) {
+        // Chỉ cập nhật avatar nếu user chưa có avatar (ưu tiên avatar user tự upload)
+        if ((user.getAvatarUrl() == null || user.getAvatarUrl().isEmpty())
+                && avatarUrl != null && !avatarUrl.isEmpty()) {
             user.setAvatarUrl(avatarUrl);
         }
 
-        // Luôn cập nhật tên từ provider nếu có (dữ liệu mới nhất)
-        if (fullName != null && !fullName.isEmpty()) {
+        // Chỉ cập nhật tên nếu user chưa có fullName (ưu tiên tên user tự cập nhật)
+        if ((user.getFullName() == null || user.getFullName().isEmpty())
+                && fullName != null && !fullName.isEmpty()) {
             user.setFullName(fullName);
         }
 
@@ -88,15 +94,25 @@ public class OAuth2UserServiceImpl implements OAuth2UserService {
             user.setVerified(true);
         }
 
-        // Cập nhật authProvider nếu user đăng ký bằng email trước đó hoặc đổi provider
-        if (!authProvider.equals(user.getAuthProvider())) {
-            user.setAuthProvider(authProvider);
+        // Cập nhật authProvider để ghi nhận user đã liên kết với OAuth2
+        // Nhưng KHÔNG ghi đè mật khẩu cũ - user vẫn có thể đăng nhập bằng email/password
+        // Format: "LOCAL,GOOGLE" hoặc "LOCAL,FACEBOOK" hoặc "LOCAL,GOOGLE,FACEBOOK"
+        String currentProvider = user.getAuthProvider();
+        if (currentProvider == null || currentProvider.isEmpty()) {
+            currentProvider = "LOCAL";
+        }
+
+        // Thêm provider mới nếu chưa có
+        if (!currentProvider.contains(authProvider)) {
+            user.setAuthProvider(currentProvider + "," + authProvider);
+            log.info("User {} đã liên kết thêm provider: {}", user.getEmail(), authProvider);
         }
 
         // Cập nhật thời gian đăng nhập
         user.setLastLogin(LocalDateTime.now());
 
-        log.info("Updated existing user from {} OAuth2: {}", authProvider, user.getEmail());
+        log.info("User đăng nhập qua {} OAuth2: {} (providers: {})",
+                authProvider, user.getEmail(), user.getAuthProvider());
         return userRepository.save(user);
     }
 
