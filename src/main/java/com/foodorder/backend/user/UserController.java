@@ -33,7 +33,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "Lấy thông tin cá nhân", description = "Lấy thông tin profile của người dùng đang đăng nhập.")
+    @Operation(summary = "Lấy thông tin cá nhân", description = "Lấy thông tin profile của người dùng đang đăng nhập, bao gồm điểm thưởng.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thành công",
                     content = @Content(schema = @Schema(implementation = UserResponse.class))),
@@ -51,8 +51,8 @@ public class UserController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getId();
 
-        // Lấy lại User từ database với role được fetch sẵn thay vì dùng detached entity
-        User user = userService.findUserWithRoleById(userId);
+        // Lấy lại User từ database với role và rewardPoint được fetch sẵn
+        User user = userService.findUserWithRoleAndRewardPointById(userId);
 
         UserResponse response = UserResponse.fromEntity(user);
         return ResponseEntity.ok(response);

@@ -18,7 +18,13 @@ public interface UserService {
      * Lấy User theo ID với Role được fetch sẵn để tránh lỗi lazy loading
      */
     User findUserWithRoleById(Long userId);
-    
+
+    /**
+     * Lấy User theo ID với Role và RewardPoint được fetch sẵn
+     * Dùng cho endpoint lấy profile đầy đủ (bao gồm điểm thưởng)
+     */
+    User findUserWithRoleAndRewardPointById(Long userId);
+
     /**
      * Tìm User theo ID
      */

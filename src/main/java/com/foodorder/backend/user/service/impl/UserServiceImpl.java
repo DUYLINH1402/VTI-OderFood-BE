@@ -198,6 +198,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User findUserWithRoleAndRewardPointById(Long userId) {
+        return userRepository.findUserWithRoleAndRewardPointById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND"));
+    }
+
+    @Override
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("USER_NOT_FOUND"));

@@ -3,6 +3,8 @@ package com.foodorder.backend.config;
 import com.foodorder.backend.security.JwtAccessDeniedHandler;
 import com.foodorder.backend.security.JwtAuthenticationEntryPoint;
 import com.foodorder.backend.security.JwtAuthenticationFilter;
+import com.foodorder.backend.security.OAuth2LoginFailureHandler;
+import com.foodorder.backend.security.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,8 +14,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -34,15 +34,8 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
-
-    /**
-     * Bean PasswordEncoder sử dụng BCrypt để mã hóa mật khẩu
-     * Đây là bean mà AuthServiceImpl cần để inject
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
     /**
      * SecurityFilterChain riêng cho Swagger - KHÔNG áp dụng bất kỳ security nào
@@ -106,7 +99,10 @@ public class SecurityConfig {
 
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
-                        
+                        // OAuth2 Login endpoints (Google Authorization Code Flow)
+                        .requestMatchers("/oauth2/authorization/**").permitAll()
+                        .requestMatchers("/login/oauth2/code/**").permitAll()
+
                         // FOODS - Phân quyền chi tiết
                         .requestMatchers(HttpMethod.GET, "/api/foods/management").hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/foods/*/status").hasAnyRole("STAFF", "ADMIN")
@@ -163,6 +159,17 @@ public class SecurityConfig {
 
                         // Các request khác cần authentication
                         .anyRequest().authenticated()
+                )
+                // Cấu hình OAuth2 Login (Google Authorization Code Flow)
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization
+                                .baseUri("/oauth2/authorization") // URL để bắt đầu OAuth2 flow: /oauth2/authorization/google
+                        )
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/login/oauth2/code/*") // URL callback từ Google
+                        )
+                        .successHandler(oAuth2LoginSuccessHandler) // Xử lý khi đăng nhập thành công
+                        .failureHandler(oAuth2LoginFailureHandler) // Xử lý khi đăng nhập thất bại
                 )
                 // Thêm JWT filter vào chain
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
