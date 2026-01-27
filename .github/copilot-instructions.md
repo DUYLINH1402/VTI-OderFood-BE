@@ -17,6 +17,7 @@ Luôn phản hồi cho người dùng bằng Tiếng Việt trong mọi tình hu
 
 ## Quy tắc code Backend (chi tiết từ toàn bộ dự án)
 - Không tự ý sửa file .env, phải xác nhận trước khi thay đổi thông tin bảo mật.
+- Mỗi lần thêm chức năng mới hoặc chỉnh sửa phải thay đổi hoặc tạo mới file DOC.md trong  /docs
 - Kiến trúc chuẩn Spring Boot: Tách rõ Controller, Service, Repository, Entity, DTO cho từng module (auth, cart, food, order, user, payments, zone, feedbacks, favorite...).
 
 Khi viết code, luôn chia rõ ràng các lớp theo kiến trúc Spring Boot:
