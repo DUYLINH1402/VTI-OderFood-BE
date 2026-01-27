@@ -41,6 +41,10 @@ public class CacheConfig {
     public static final String COMMENTS_BY_TARGET_CACHE = "commentsByTarget";
     public static final String COMMENT_COUNT_CACHE = "commentCount";
     public static final String ADMIN_COMMENTS_CACHE = "adminComments";
+    // Blog Caches
+    public static final String BLOGS_CACHE = "blogs";
+    public static final String FEATURED_BLOGS_CACHE = "featuredBlogs";
+    public static final String BLOG_CATEGORIES_CACHE = "blogCategories";
 
     @Bean
     public CacheManager cacheManager() {
@@ -67,7 +71,11 @@ public class CacheConfig {
                 // Comment Caches
                 new ConcurrentMapCache(COMMENTS_BY_TARGET_CACHE),
                 new ConcurrentMapCache(COMMENT_COUNT_CACHE),
-                new ConcurrentMapCache(ADMIN_COMMENTS_CACHE)
+                new ConcurrentMapCache(ADMIN_COMMENTS_CACHE),
+                // Blog Caches
+                new ConcurrentMapCache(BLOGS_CACHE),
+                new ConcurrentMapCache(FEATURED_BLOGS_CACHE),
+                new ConcurrentMapCache(BLOG_CATEGORIES_CACHE)
         ));
         return cacheManager;
     }

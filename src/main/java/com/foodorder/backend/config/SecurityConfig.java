@@ -157,6 +157,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/comments/**").authenticated() // Xóa comment yêu cầu đăng nhập
                         .requestMatchers("/api/admin/comments/**").hasRole("ADMIN") // Admin quản lý comment
 
+                        // BLOGS - Phân quyền chi tiết
+                        .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll() // Public: xem danh sách, chi tiết, tìm kiếm
+                        .requestMatchers("/api/admin/blogs/**").hasRole("ADMIN") // Admin: CRUD bài viết và danh mục
+
                         // Các request khác cần authentication
                         .anyRequest().authenticated()
                 )
