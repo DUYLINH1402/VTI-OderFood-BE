@@ -7,12 +7,17 @@ import com.foodorder.backend.blog.repository.BlogCategoryRepository;
 import com.foodorder.backend.blog.repository.BlogRepository;
 import com.foodorder.backend.blog.service.BlogCategoryService;
 import com.foodorder.backend.exception.BadRequestException;
+import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
+import com.foodorder.backend.security.CustomUserDetails;
+import com.foodorder.backend.user.entity.User;
 import com.foodorder.backend.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -131,6 +136,7 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
 
     /**
      * Cập nhật danh mục (Admin)
+     * Nếu danh mục được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật
      */
     @Override
     @Transactional
@@ -139,6 +145,9 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
         log.info("Admin: Cập nhật danh mục blog ID={}", id);
 
         BlogCategory category = findCategoryById(id);
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(category.getIsProtected(), "cập nhật");
 
         // Kiểm tra slug mới
         if (request.getSlug() != null && !request.getSlug().isBlank()) {
@@ -173,6 +182,7 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
     /**
      * Xóa danh mục (Admin)
      * Chỉ cho phép xóa khi không có bài viết nào thuộc danh mục
+     * Nếu danh mục được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền xóa
      */
     @Override
     @Transactional
@@ -181,6 +191,9 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
         log.info("Admin: Xóa danh mục blog ID={}", id);
 
         BlogCategory category = findCategoryById(id);
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(category.getIsProtected(), "xóa");
 
         // Kiểm tra có bài viết nào thuộc danh mục không
         long blogCount = blogRepository.countByCategoryId(id);
@@ -196,6 +209,40 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
     }
 
     // ==================== Helper Methods ====================
+
+    /**
+     * Lấy thông tin user hiện tại từ SecurityContext
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            return userDetails.getUser();
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra user hiện tại có phải là SUPER_ADMIN không
+     */
+    private boolean isCurrentUserSuperAdmin() {
+        User currentUser = getCurrentUser();
+        return currentUser != null && currentUser.isSuperAdmin();
+    }
+
+    /**
+     * Kiểm tra quyền thao tác trên dữ liệu được bảo vệ
+     * Nếu dữ liệu được bảo vệ (isProtected = true) và user không phải SUPER_ADMIN, throw ForbiddenException
+     */
+    private void checkProtectedDataPermission(Boolean isProtected, String action) {
+        if (Boolean.TRUE.equals(isProtected) && !isCurrentUserSuperAdmin()) {
+            log.warn("User không có quyền {} dữ liệu được bảo vệ", action);
+            throw new ForbiddenException(
+                    "Dữ liệu được bảo vệ, chỉ Super Admin mới có quyền " + action,
+                    "PROTECTED_DATA_ACCESS_DENIED"
+            );
+        }
+    }
 
     /**
      * Tìm danh mục theo ID, throw exception nếu không tìm thấy
@@ -221,6 +268,7 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
                 .description(category.getDescription())
                 .displayOrder(category.getDisplayOrder())
                 .isActive(category.getIsActive())
+                .isProtected(category.getIsProtected())
                 .blogCount(blogCount)
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())

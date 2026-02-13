@@ -54,6 +54,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(apiError, HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    // Xử lý lỗi không có quyền (ForbiddenException - ví dụ: dữ liệu được bảo vệ)
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException ex) {
+        log.warn("Forbidden access: {}", ex.getMessage());
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.FORBIDDEN.value())
+                .message(ex.getMessage())
+                .errorCode(ex.getErrorCode())
+                .errors(null)
+                .build();
+        return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
+    }
+
     // Xử lý JWT token expired
     @ExceptionHandler(JwtTokenExpiredException.class)
     public ResponseEntity<ApiError> handleJwtTokenExpired(JwtTokenExpiredException ex) {

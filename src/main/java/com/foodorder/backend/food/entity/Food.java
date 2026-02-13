@@ -60,6 +60,10 @@ public class Food {
         @Column(name = "is_active")
         private Boolean isActive;
 
+        // Đánh dấu dữ liệu được bảo vệ - chỉ SUPER_ADMIN mới có quyền sửa/xóa
+        @Column(name = "is_protected")
+        private Boolean isProtected;
+
         @Enumerated(EnumType.STRING)
         @Column(name = "status")
         private FoodStatus status;

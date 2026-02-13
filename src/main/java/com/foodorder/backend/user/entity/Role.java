@@ -50,6 +50,14 @@ public class Role {
     }
 
     /**
+     * Kiểm tra xem có phải role super admin không
+     * SUPER_ADMIN có toàn quyền, bao gồm sửa/xóa dữ liệu được bảo vệ
+     */
+    public boolean isSuperAdmin() {
+        return "ROLE_SUPER_ADMIN".equals(code);
+    }
+
+    /**
      * Kiểm tra xem có phải role staff không
      */
     public boolean isStaff() {

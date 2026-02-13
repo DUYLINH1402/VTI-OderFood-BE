@@ -161,6 +161,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/blogs/**").permitAll() // Public: xem danh sách, chi tiết, tìm kiếm
                         .requestMatchers("/api/admin/blogs/**").hasRole("ADMIN") // Admin: CRUD bài viết và danh mục
 
+                        // CONTACT - Tin nhắn liên hệ từ khách hàng
+                        .requestMatchers(HttpMethod.POST, "/api/contact").permitAll() // Public: gửi tin nhắn liên hệ
+                        .requestMatchers("/api/admin/contacts/**").hasAnyRole("STAFF", "ADMIN") // Admin/Staff: quản lý tin nhắn
+
                         // Các request khác cần authentication
                         .anyRequest().authenticated()
                 )

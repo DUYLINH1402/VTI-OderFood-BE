@@ -60,6 +60,11 @@ public class Blog {
     @Builder.Default
     private Boolean isFeatured = false;
 
+    // Đánh dấu dữ liệu được bảo vệ - chỉ SUPER_ADMIN mới có quyền sửa/xóa
+    @Column(name = "is_protected")
+    @Builder.Default
+    private Boolean isProtected = false;
+
     // Tags để phân loại linh hoạt (lưu dạng comma-separated, ví dụ: "khuyến mãi,ưu đãi,tháng 1")
     @Column(name = "tags", length = 500)
     private String tags;
@@ -116,4 +121,3 @@ public class Blog {
         return !publishedAt.isAfter(LocalDateTime.now());
     }
 }
-

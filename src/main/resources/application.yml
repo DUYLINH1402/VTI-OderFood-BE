@@ -13,7 +13,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
@@ -87,6 +87,11 @@ app:
   frontend:
     reset-password-url: ${RESET_PASSWORD_URL}
     oauth2-redirect-url: ${OAUTH2_REDIRECT_URL}
+  # Contact module configuration
+  admin:
+    email: ${ADMIN_EMAIL}
+  store:
+    name: ${STORE_NAME}
 
 # ===========================================
 # Google OAuth 2.0 Configuration

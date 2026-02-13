@@ -1,11 +1,15 @@
 package com.foodorder.backend.comment.service.impl;
 
+import com.foodorder.backend.comment.dto.request.BatchDeleteRequest;
+import com.foodorder.backend.comment.dto.request.BatchUpdateStatusRequest;
 import com.foodorder.backend.comment.dto.request.CreateCommentRequest;
 import com.foodorder.backend.comment.dto.request.UpdateCommentRequest;
 import com.foodorder.backend.comment.dto.request.UpdateCommentStatusRequest;
+import com.foodorder.backend.comment.dto.response.BatchOperationResponse;
 import com.foodorder.backend.comment.dto.response.CommentNotification;
 import com.foodorder.backend.comment.dto.response.CommentPageResponse;
 import com.foodorder.backend.comment.dto.response.CommentResponse;
+import com.foodorder.backend.comment.dto.response.CommentStatisticsResponse;
 import com.foodorder.backend.comment.entity.Comment;
 import com.foodorder.backend.comment.entity.CommentStatus;
 import com.foodorder.backend.comment.repository.CommentRepository;
@@ -402,6 +406,154 @@ public class CommentServiceImpl implements CommentService {
                 targetType,
                 targetId
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CommentPageResponse getCommentsByUser(Long userId, Pageable pageable) {
+        // Validate user exists
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng", "USER_NOT_FOUND");
+        }
+
+        Page<Comment> commentPage = commentRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+        List<CommentResponse> comments = commentPage.getContent().stream()
+                .map(CommentResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        return CommentPageResponse.builder()
+                .comments(comments)
+                .totalComments(commentPage.getTotalElements())
+                .totalPages(commentPage.getTotalPages())
+                .currentPage(commentPage.getNumber())
+                .pageSize(commentPage.getSize())
+                .hasNext(commentPage.hasNext())
+                .hasPrevious(commentPage.hasPrevious())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CommentPageResponse getCommentsByTargetForAdmin(TargetType targetType, Long targetId, Pageable pageable) {
+        Page<Comment> commentPage = commentRepository.findByTargetTypeAndTargetId(targetType, targetId, pageable);
+
+        List<CommentResponse> comments = commentPage.getContent().stream()
+                .map(CommentResponse::fromEntity)
+                .collect(Collectors.toList());
+
+        // Đếm tổng số comment (bao gồm tất cả trạng thái)
+        long totalComments = commentRepository.countByTargetTypeAndTargetId(targetType, targetId);
+
+        return CommentPageResponse.builder()
+                .comments(comments)
+                .totalComments(totalComments)
+                .totalPages(commentPage.getTotalPages())
+                .currentPage(commentPage.getNumber())
+                .pageSize(commentPage.getSize())
+                .hasNext(commentPage.hasNext())
+                .hasPrevious(commentPage.hasPrevious())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = CacheConfig.ADMIN_COMMENTS_CACHE, key = "'statistics'")
+    public CommentStatisticsResponse getCommentStatistics() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
+        java.time.LocalDateTime sevenDaysAgo = now.minusDays(7);
+        java.time.LocalDateTime thirtyDaysAgo = now.minusDays(30);
+
+        long totalComments = commentRepository.count();
+        long activeComments = commentRepository.countByStatus(CommentStatus.ACTIVE);
+        long hiddenComments = commentRepository.countByStatus(CommentStatus.HIDDEN);
+        long deletedComments = commentRepository.countByStatus(CommentStatus.DELETED);
+        long commentsToday = commentRepository.countCommentsFromDate(startOfToday);
+        long commentsLast7Days = commentRepository.countCommentsFromDate(sevenDaysAgo);
+        long commentsLast30Days = commentRepository.countCommentsFromDate(thirtyDaysAgo);
+
+        log.info("[ADMIN] Lấy thống kê bình luận: total={}, active={}, hidden={}, deleted={}",
+                totalComments, activeComments, hiddenComments, deletedComments);
+
+        return CommentStatisticsResponse.builder()
+                .totalComments(totalComments)
+                .activeComments(activeComments)
+                .hiddenComments(hiddenComments)
+                .deletedComments(deletedComments)
+                .commentsToday(commentsToday)
+                .commentsLast7Days(commentsLast7Days)
+                .commentsLast30Days(commentsLast30Days)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.COMMENTS_BY_TARGET_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.COMMENT_COUNT_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_COMMENTS_CACHE, allEntries = true)
+    })
+    public BatchOperationResponse batchUpdateStatus(BatchUpdateStatusRequest request) {
+        List<Long> commentIds = request.getCommentIds();
+        CommentStatus newStatus = request.getStatus();
+
+        List<Comment> comments = commentRepository.findByIdIn(commentIds);
+        List<Long> foundIds = comments.stream().map(Comment::getId).collect(Collectors.toList());
+        List<Long> failedIds = commentIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .collect(Collectors.toList());
+
+        // Cập nhật trạng thái cho các comment tìm thấy
+        for (Comment comment : comments) {
+            comment.setStatus(newStatus);
+        }
+        commentRepository.saveAll(comments);
+
+        int successCount = comments.size();
+        int failCount = failedIds.size();
+
+        log.info("[ADMIN] Batch update status: successCount={}, failCount={}, newStatus={}",
+                successCount, failCount, newStatus);
+
+        return BatchOperationResponse.builder()
+                .successCount(successCount)
+                .failCount(failCount)
+                .failedIds(failedIds)
+                .message(String.format("Đã cập nhật %d bình luận thành trạng thái %s", successCount, newStatus))
+                .build();
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.COMMENTS_BY_TARGET_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.COMMENT_COUNT_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_COMMENTS_CACHE, allEntries = true)
+    })
+    public BatchOperationResponse batchHardDelete(BatchDeleteRequest request) {
+        List<Long> commentIds = request.getCommentIds();
+
+        List<Comment> comments = commentRepository.findByIdIn(commentIds);
+        List<Long> foundIds = comments.stream().map(Comment::getId).collect(Collectors.toList());
+        List<Long> failedIds = commentIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .collect(Collectors.toList());
+
+        // Xóa vĩnh viễn các comment tìm thấy
+        commentRepository.deleteAll(comments);
+
+        int successCount = comments.size();
+        int failCount = failedIds.size();
+
+        log.info("[ADMIN] Batch hard delete: successCount={}, failCount={}", successCount, failCount);
+
+        return BatchOperationResponse.builder()
+                .successCount(successCount)
+                .failCount(failCount)
+                .failedIds(failedIds)
+                .message(String.format("Đã xóa vĩnh viễn %d bình luận", successCount))
+                .build();
     }
 
     // ========== PRIVATE HELPER METHODS ==========

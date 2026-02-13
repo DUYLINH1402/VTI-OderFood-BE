@@ -122,7 +122,7 @@ INSERT INTO blogs (
     'happy-hour-uong-tha-ga-khong-lo-ve-gia',
     'Tận hưởng khung giờ vàng mỗi ngày với ưu đãi Mua 1 Tặng 1 cho toàn bộ menu đồ uống có cồn và Mocktail.',
     '<h2>Giải tỏa căng thẳng sau giờ làm việc</h2><p>Đừng để một ngày làm việc mệt mỏi trôi qua trong lặng lẽ. Hãy ghé ngay nhà hàng chúng tôi để tận hưởng không gian chill và chương trình ưu đãi <strong>Happy Hour</strong> lớn nhất trong ngày.</p><h3>Chi tiết ưu đãi:</h3><ul><li><strong>Thời gian:</strong> 16:00 - 18:00 hàng ngày (kể cả cuối tuần).</li><li><strong>Nội dung:</strong> Mua 1 Tặng 1 cho tất cả các loại Beer thủ công (Craft Beer), Cocktail, và rượu vang theo ly.</li><li><strong>Đặc biệt:</strong> Miễn phí một phần Snack khoai tây chiên muối cho nhóm đi từ 4 người.</li></ul><p>Thưởng thức một ly <em>Classic Mojito</em> mát lạnh hay một ly <em>IPA Beer</em> đậm đà trong không gian âm nhạc Acoustic nhẹ nhàng chắc chắn sẽ giúp bạn tái tạo năng lượng hiệu quả.</p>',
-    'https://images.unsplash.com/photo-1767065702845-61619d22c0cd?q=80&w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1551024709-8f23befc6f87?q=80&w=800&auto=format&fit=crop',
     'PUBLISHED', 315, FALSE, 'promotion,happyhour,drinks',
     'Chương trình Happy Hour Mua 1 Tặng 1 đồ uống', 'Khuyến mãi khung giờ vàng 16h-18h hàng ngày: Mua 1 Tặng 1 đồ uống tại quầy bar nhà hàng.',
     '2026-01-20 16:00:00', 56, 1
@@ -176,9 +176,119 @@ INSERT INTO blogs (
     'Hỏi đáp nhanh cùng Chatbot AI thông minh trên website của chúng tôi',
     'hoi-dap-nhanh-cung-chatbot-ai-thong-minh',
     'Khám phá cách sử dụng Chatbot tích hợp OpenAI để tra cứu menu và đặt bàn chỉ trong vài giây.',
-    '<h2>Công nghệ AI đồng hành cùng thực khách</h2><p>Để mang lại sự tiện lợi tối đa, chúng tôi đã tích hợp <strong>Chatbot AI thông minh</strong> (sử dụng công nghệ từ OpenAI) ngay trên website. Bạn không còn phải chờ đợi nhân viên trực hotline nữa!</p><h3>Chatbot có thể giúp gì cho bạn?</h3><ul><li><strong>Tra cứu menu:</strong> Chỉ cần gõ "Thực đơn hôm nay có gì?", AI sẽ liệt kê các món đặc sắc nhất.</li><li><strong>Tư vấn món ăn:</strong> Bạn bị dị ứng với lạc (đậu phộng)? Hãy hỏi AI và nó sẽ lọc ra những món an toàn cho bạn.</li><li><strong>Kiểm tra tình trạng bàn:</strong> Hỏi về bàn trống vào giờ cao điểm một cách nhanh chóng.</li></ul><p>Hãy thử nhấn vào biểu tượng bong bóng chat màu xanh ở góc phải màn hình để bắt đầu trải nghiệm sự chuyên nghiệp từ công nghệ của chúng tôi!</p>',
+    '<h2>Công nghệ AI đồng hành cùng thực khách</h2><p>Để mang lại sự tiện lợi tối đa, chúng tôi đã tích hợp <strong>Chatbot AI thông minh</strong> (sử dụng công nghệ từ OpenAI) ngay trên website. Bạn không còn phải chờ đợi nhân viên trực hotline nữa!</p><h3>Chatbot có thể giúp gì cho bạn?</h3><ul><li><strong>Tra cứu menu:</strong> Chỉ cần gõ "Thực đơn hôm nay có gì?", AI sẽ liệt kê các món đặc sắc nhất.</li><li><strong>Tư vấn món ăn:</strong> Bạn bị dị ứng với lạc (đậu phộng)? Hãy hỏi AI và nó sẽ lọc ra những món an toàn cho bạn.</li><li><strong>Kiểm tra tình trạng bàn:</strong> Hỏi về bàn trống vào giờ cao điểm một cách nhanh chóng.</li></ul><p>Hãy thử nhấn vào biểu Robot chat màu xanh lá ở góc phải màn hình để bắt đầu trải nghiệm sự chuyên nghiệp từ công nghệ của chúng tôi!</p>',
     'https://plus.unsplash.com/premium_photo-1684761949804-fd8eb9a5b6cc?q=80&w=800&auto=format&fit=crop',
     'PUBLISHED', 600, FALSE, 'tutorial,ai,chatbot',
     'Cách sử dụng Chatbot AI thông minh đặt món', 'Trải nghiệm hỗ trợ khách hàng 24/7 bằng công nghệ AI tiên tiến nhất trên website nhà hàng.' ,
     '2026-01-22 14:00:00', 56, 4
+),
+-- 11. Membership Program (Promotion)
+(
+    'Thẻ thành viên Privilege: Càng ăn nhiều, ưu đãi càng lớn',
+    'the-thanh-vien-privilege-uu-dai-lon',
+    'Chương trình tích điểm đổi quà và giảm giá trực tiếp cho khách hàng thân thiết của hệ thống trong năm 2026.',
+    '<h2>Gia nhập cộng đồng Foodie Privilege</h2><p>Chúng tôi chính thức ra mắt hệ thống <strong>Thẻ thành viên điện tử</strong> tích hợp ngay trên tài khoản website của bạn. Giờ đây, mỗi hóa đơn thanh toán đều mang lại cho bạn những giá trị vượt trội.</p><h3>Các hạng thẻ và đặc quyền:</h3><ul><li><strong>Hạng Bạc (Silver):</strong> Giảm 5% cho mọi hóa đơn, tặng voucher sinh nhật 100k.</li><li><strong>Hạng Vàng (Gold):</strong> Giảm 10% hóa đơn, ưu tiên đặt bàn vào giờ cao điểm, miễn phí giao hàng bán kính 5km.</li><li><strong>Hạng Kim Cương (Diamond):</strong> Giảm 15%, thưởng thức các món mới trong menu thử nghiệm miễn phí, có quản lý riêng hỗ trợ đặt tiệc.</li></ul><p>Chỉ cần đăng ký tài khoản và thực hiện đơn hàng đầu tiên để bắt đầu tích lũy điểm ngay hôm nay!</p>',
+    'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 320, TRUE, 'promotion,membership,loyalty',
+    'Chương trình khách hàng thân thiết Privilege 2026', 'Tích điểm đổi quà và nhận ưu đãi giảm giá lên đến 15% cho mỗi đơn hàng tại nhà hàng.',
+    '2026-02-05 10:00:00', 56, 1
+),
+-- 12. Seafood Review (Review)
+(
+    'Hương vị đại dương: Thưởng thức tháp hải sản khổng lồ "Seafood Tower"',
+    'thuong-thuc-thap-hai-san-khong-lo',
+    'Đắm chìm trong sự tươi ngon của tôm hùm, cua hoàng đế và hàu tươi được nhập khẩu trực tiếp trong ngày.',
+    '<h2>Trải nghiệm thượng lưu với Seafood Tower</h2><p>Nếu bạn là một tín đồ của hải sản, tháp hải sản 3 tầng tại nhà hàng là một lựa chọn không thể bỏ qua. Mỗi tầng là một bất ngờ về hương vị và sự tươi mới.</p><h3>Cấu trúc tháp hải sản:</h3><ul><li><strong>Tầng 1:</strong> Hàu Miyagi Nhật Bản ăn kèm sốt Tabasco và chanh vàng.</li><li><strong>Tầng 2:</strong> Tôm hùm Alaska hấp rượu vang trắng và tôm sú biển nướng muối ớt.</li><li><strong>Tầng 3:</strong> Cua Tuyết sốt Cajun cay nồng và các loại ốc biển cao cấp.</li></ul><p>Chúng tôi cam kết 100% hải sản được bảo quản trong bể kính và chỉ chế biến khi có yêu cầu từ khách hàng để giữ trọn vị ngọt tự nhiên của biển cả.</p>',
+    'https://images.unsplash.com/photo-1551489186-cf8726f514f8?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 680, FALSE, 'review,seafood,fine-dining',
+    'Review Tháp Hải Sản khổng lồ tại nhà hàng', 'Khám phá hương vị tươi ngon của tôm hùm và cua hoàng đế trong thực đơn hải sản mới nhất.',
+    '2026-02-10 11:30:00', 56, 2
+),
+-- 13. New Branch (Internal News)
+(
+    'Mở rộng bản đồ ẩm thực: Khai trương chi nhánh thứ 3 tại trung tâm Quận 1',
+    'khai-truong-chi-nhanh-thu-3-quan-1',
+    'Tiếp nối sự thành công, chi nhánh mới với không gian sang trọng và view triệu đô sẽ chính thức đi vào hoạt động từ tháng 3/2026.',
+    '<p>Sau hơn 2 năm phục vụ thực khách tại hai chi nhánh hiện có, chúng tôi vô cùng hào hứng thông báo về việc khai trương <strong>Chi nhánh thứ 3</strong> tại địa chỉ: 123 Lê Lợi, Quận 1, TP.HCM.</p><h3>Không gian đậm chất nghệ thuật</h3><p>Chi nhánh mới được thiết kế theo phong cách Indochine kết hợp hiện đại, với không gian mở và hệ thống kính tràn viền giúp thực khách có thể ngắm nhìn toàn cảnh thành phố về đêm.</p><h3>Tuần lễ khai trương vàng</h3><p>Từ ngày 01/03 đến 07/03, chi nhánh Quận 1 sẽ áp dụng chương trình <strong>"Đi 4 tính tiền 3"</strong> cho tất cả các set menu và tặng kèm 01 phần quà lưu niệm cho 50 khách hàng đầu tiên mỗi ngày.</p>',
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 1100, TRUE, 'news,internal,grand-opening',
+    'Khai trương chi nhánh nhà hàng mới tại Quận 1', 'Chào đón chi nhánh thứ 3 với ưu đãi cực lớn và không gian sang trọng bậc nhất Sài Thành.',
+    '2026-02-15 08:00:00', 56, 3
+),
+-- 14. WebSocket Tracking Guide (Tutorial)
+(
+    'Theo dõi đơn hàng thời gian thực: Không còn nỗi lo chờ đợi',
+    'theo-doi-don-hang- thời-gian-thuc',
+    'Hướng dẫn cách sử dụng tính năng thông báo trực tiếp trên website để biết chính xác món ăn của bạn đang ở giai đoạn nào.',
+    '<h2>Công nghệ kết nối bếp và thực khách</h2><p>Nhằm giảm bớt sự lo lắng khi đặt hàng online, hệ thống của chúng tôi đã tích hợp công nghệ <strong>Websocket</strong>, cho phép cập nhật trạng thái đơn hàng ngay lập tức mà không cần tải lại trang.</p><h3>Các trạng thái đơn hàng bạn sẽ nhận được:</h3><ul><li><strong>Đã xác nhận:</strong> Nhà hàng đã nhận đơn và bắt đầu chuẩn bị.</li><li><strong>Đang chế biến:</strong> Đầu bếp đang thực hiện món ăn của bạn.</li><li><strong>Đang giao hàng:</strong> Shipper đã lấy hàng và đang trên đường đến địa chỉ của bạn.</li><li><strong>Hoàn thành:</strong> Đơn hàng đã được giao thành công.</li></ul><p>Bạn cũng có thể nhắn tin trực tiếp với nhân viên hỗ trợ thông qua khung chat ở góc màn hình nếu có bất kỳ thay đổi nào về đơn hàng.</p>',
+    'https://plus.unsplash.com/premium_vector-1727150463713-451b8d5e90e9?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 430, FALSE, 'tutorial,websocket,order-tracking',
+    'Cách theo dõi đơn hàng online thời gian thực', 'Trải nghiệm tính năng cập nhật trạng thái đơn hàng tự động thông qua công nghệ Websocket hiện đại.',
+    '2026-01-28 09:00:00', 56, 4
+),
+-- 15. Weekend Brunch (Promotion)
+(
+    'Weekend Brunch: Nạp năng lượng cho ngày cuối tuần thảnh thơi',
+    'weekend-brunch-nap-nang-luong-cuoi-tuan',
+    'Tận hưởng bữa sáng muộn đầy dưỡng chất với thực đơn buffet nhẹ nhàng và cà phê Specialty miễn phí.',
+    '<h2>Khi bữa sáng gặp gỡ bữa trưa</h2><p>Chương trình <strong>Weekend Brunch</strong> là khoảng thời gian lý tưởng để bạn cùng gia đình thư giãn sau một tuần làm việc căng thẳng. Không cần dậy quá sớm, bạn vẫn có thể thưởng thức những món ăn tinh tế nhất.</p><h3>Thực đơn Brunch đặc sắc:</h3><ul><li>Các loại bánh mì Artisan nướng giòn kèm bơ thảo mộc.</li><li>Trứng Benedict sốt Hollandaise mịn màng.</li><li>Quầy Salad bar với hơn 15 loại sốt tự chọn.</li><li>Cà phê pha máy chuẩn Ý hoặc nước ép trái cây tươi.</li></ul><p>Thời gian: 10:00 - 14:00 mỗi Thứ Bảy và Chủ Nhật hàng tuần.</p>',
+    'https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 285, FALSE, 'promotion,brunch,weekend',
+    'Thực đơn Weekend Brunch cuối tuần hấp dẫn', 'Tận hưởng bữa sáng muộn sang trọng cùng gia đình với menu Buffet Brunch đa dạng món Âu - Á.',
+    '2026-02-12 15:00:00', 56, 1
+),
+-- 16. Dessert Review (Review)
+(
+    'Nghệ thuật đồ ngọt: Khi món tráng miệng là một bức tranh',
+    'nghe-thuat-do-ngot-mon-trang-mieng',
+    'Khám phá bộ sưu tập đồ ngọt mới nhất, nơi hương vị hòa quyện cùng sự tinh tế trong cách trình bày.',
+    '<h2>Vị ngọt kết thúc một bữa tiệc hoàn hảo</h2><p>Tại nhà hàng, món tráng miệng không chỉ là món ăn thêm, đó là một tác phẩm nghệ thuật. Đầu bếp bánh của chúng tôi luôn tìm cách cân bằng giữa vị ngọt, độ béo và màu sắc tự nhiên.</p><h3>Điểm nhấn trong menu đồ ngọt:</h3><ul><li><strong>Tiramisu chậu cây:</strong> Một sự sáng tạo thú vị với vị đắng của cà phê và lớp kem Mascarpone mềm mịn, trình bày như một chậu cây nhỏ xinh.</li><li><strong>Mousse xoài cốt dừa:</strong> Sử dụng xoài cát Hòa Lộc chín mọng, mang lại vị chua thanh mát đặc trưng của vùng nhiệt đới.</li><li><strong>Bánh Macaron đủ vị:</strong> Sự tinh tế từ nước Pháp với lớp vỏ giòn tan và nhân kem đa dạng.</li></ul><p>Hãy để chúng tôi làm ngọt ngào thêm câu chuyện của bạn bằng những món quà từ thiên nhiên này.</p>',
+    'https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 510, TRUE, 'review,dessert,cake',
+    'Review các món tráng miệng cao cấp tại nhà hàng', 'Thưởng thức Tiramisu, Mousse xoài và nghệ thuật làm bánh đỉnh cao từ các đầu bếp chuyên nghiệp.',
+    '2026-02-18 14:00:00', 56, 2
+),
+-- 17. Farm to Table (Internal News)
+(
+    'Từ nông trại đến bàn ăn: Hành trình của nguyên liệu Organic',
+    'tu-nong-trai-den-ban-an-nguyen-lieu-organic',
+    'Khám phá quy trình tuyển chọn nguyên liệu nghiêm ngặt từ các trang trại VietGAP để đảm bảo sức khỏe cho thực khách.',
+    '<h2>Sức khỏe của bạn là ưu tiên hàng đầu</h2><p>Trong năm 2026, chúng tôi đẩy mạnh chiến dịch <strong>"Green Table"</strong>. Hơn 80% rau củ và thịt tại nhà hàng hiện nay được cung cấp trực tiếp từ các nông trại hữu cơ tại Đà Lạt và các tỉnh miền Tây.</p><h3>Cam kết 3 Không:</h3><ol><li>Không sử dụng chất bảo quản thực phẩm.</li><li>Không dùng rau củ biến đổi gen (Non-GMO).</li><li>Không sử dụng thuốc trừ sâu hóa học trong quá trình canh tác.</li></ol><p>Mỗi món ăn bạn thưởng thức không chỉ ngon mà còn là sự an tâm tuyệt đối về nguồn gốc và chất lượng dinh dưỡng.</p>',
+    'https://images.unsplash.com/photo-1464226184884-fa280b87c399?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 390, FALSE, 'news,organic,health',
+    'Nguồn nguyên liệu sạch Organic tại nhà hàng', 'Hành trình mang thực phẩm sạch từ nông trại Đà Lạt đến bàn ăn của bạn với tiêu chuẩn VietGAP.',
+    '2026-01-25 08:30:00', 56, 3
+),
+-- 18. VIP Room Booking (Tutorial)
+(
+    'Đặt phòng VIP riêng tư: Lựa chọn hoàn hảo cho đối tác và gia đình',
+    'dat-phong-vip-rieng-tu-cho-doi-tac',
+    'Hướng dẫn đặt phòng riêng trên website để có không gian yên tĩnh cho các cuộc họp quan trọng hoặc tiệc gia đình.',
+    '<h2>Không gian riêng tư giữa lòng thành phố</h2><p>Bạn cần một nơi yên tĩnh để bàn công việc hay muốn một không gian riêng tư cho lễ kỷ niệm gia đình? Hệ thống phòng VIP của chúng tôi sẽ đáp ứng mọi yêu cầu của bạn.</p><h3>Tiện ích tại phòng VIP:</h3><ul><li>Cách âm tuyệt đối, hệ thống điều hòa riêng biệt.</li><li>Hỗ trợ màn hình máy chiếu và âm thanh cho các cuộc họp.</li><li>Menu phục vụ riêng tại bàn theo yêu cầu của gia chủ.</li></ul><p><strong>Cách đặt:</strong> Tại trang chủ, chọn mục "Đặt bàn", sau đó tích vào tùy chọn "Phòng riêng". Chatbot AI của chúng tôi cũng có thể giúp bạn chọn phòng phù hợp với số lượng khách.</p>',
+    'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 150, FALSE, 'tutorial,vip-room,booking',
+    'Hướng dẫn đặt phòng VIP riêng tư online', 'Dịch vụ đặt phòng riêng cho hội họp và tiệc gia đình với không gian sang trọng, yên tĩnh.',
+    '2026-02-20 10:00:00', 56, 4
+),
+-- 19. Family Combo (Promotion)
+(
+    'Tiệc gia đình ấm cúng với Combo "Home Sweet Home"',
+    'tiec-gia-dinh-combo-home-sweet-home',
+    'Gói thực đơn tiết kiệm dành cho nhóm từ 4-6 người với đầy đủ các món đặc sắc nhất của nhà hàng.',
+    '<h2>Gắn kết tình thân qua bữa ăn ngon</h2><p>Không gì hạnh phúc bằng việc cả gia đình quây quần bên mâm cơm ấm nóng. Combo <strong>"Home Sweet Home"</strong> được thiết kế để mang lại sự cân bằng dinh dưỡng và niềm vui cho mọi thành viên.</p><h3>Chi tiết Combo (Giá chỉ 1.299.000đ):</h3><ul><li>01 Salad ức gà nướng sốt mè rang.</li><li>01 Pizza hải sản size lớn hoặc 01 thố cơm chiên hải sản.</li><li>01 Sườn nướng BBQ tảng lớn.</li><li>01 Lẩu nấm sâm cầm thanh mát.</li><li>Miễn phí 01 bình nước ép trái cây theo mùa.</li></ul><p>Áp dụng cho cả ăn tại chỗ và đặt giao hàng về nhà.</p>',
+    'https://images.unsplash.com/photo-1547573854-74d2a7ad4484?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 470, FALSE, 'promotion,family-combo,dinner',
+    'Set menu gia đình Home Sweet Home giá tốt', 'Ưu đãi đặt combo tiệc gia đình tiết kiệm 20% so với gọi món lẻ, phục vụ cho nhóm 4-6 người.',
+    '2026-02-15 17:00:00', 56, 1
+),
+-- 20. Wine Pairing (Review)
+(
+    'Rượu vang và món ăn: Nghệ thuật kết hợp nâng tầm vị giác',
+    'nghe-thuat-ket-hop-ruou-vang-mon-an',
+    'Cùng chuyên gia Sommelier của nhà hàng khám phá cách chọn loại rượu vang phù hợp với từng loại thực phẩm.',
+    '<h2>Sự hòa quyện hoàn hảo</h2><p>Một ly rượu vang đúng điệu có thể làm bừng sáng hương vị của món ăn. Tuy nhiên, không phải ai cũng biết quy tắc kết hợp sao cho chuẩn xác nhất.</p><h3>Gợi ý từ chuyên gia:</h3><ul><li><strong>Vang trắng:</strong> Rất hợp với hải sản, cá và các loại thịt trắng như gà nhờ độ axit cao giúp khử mùi tanh.</li><li><strong>Vang đỏ:</strong> Là người bạn đồng hành của Steak, thịt bò và các món có nhiều gia vị nhờ hàm lượng Tanin giúp trung hòa chất béo.</li><li><strong>Vang hồng/Vang nổ:</strong> Tuyệt vời cho các món khai vị và tráng miệng nhẹ nhàng.</li></ul><p>Hãy yêu cầu nhân viên phục vụ tư vấn loại vang phù hợp nhất cho món chính của bạn để có một trải nghiệm ẩm thực trọn vẹn nhất.</p>',
+    'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800&auto=format&fit=crop',
+    'PUBLISHED', 310, FALSE, 'review,wine-pairing,sommelier',
+    'Bí quyết kết hợp rượu vang và món ăn chuẩn vị', 'Hướng dẫn chọn rượu vang trắng, đỏ và vang nổ phù hợp với từng món ăn trong menu nhà hàng.' ,
+    '2026-02-22 19:00:00', 56, 2
 );

@@ -117,5 +117,50 @@ public interface CommentService {
      * @param commentId ID của bình luận
      */
     void hardDeleteComment(Long commentId);
+
+    /**
+     * [ADMIN] Lấy tất cả bình luận của một user
+     * @param userId ID của user
+     * @param pageable Thông tin phân trang
+     * @return CommentPageResponse
+     */
+    CommentPageResponse getCommentsByUser(Long userId, Pageable pageable);
+
+    /**
+     * [ADMIN] Lấy bình luận theo đối tượng (bao gồm cả hidden/deleted)
+     * @param targetType Loại đối tượng
+     * @param targetId ID đối tượng
+     * @param pageable Thông tin phân trang
+     * @return CommentPageResponse
+     */
+    CommentPageResponse getCommentsByTargetForAdmin(
+            com.foodorder.backend.like.entity.TargetType targetType,
+            Long targetId,
+            Pageable pageable
+    );
+
+    /**
+     * [ADMIN] Thống kê bình luận
+     * @return CommentStatisticsResponse
+     */
+    com.foodorder.backend.comment.dto.response.CommentStatisticsResponse getCommentStatistics();
+
+    /**
+     * [ADMIN] Cập nhật trạng thái nhiều bình luận cùng lúc
+     * @param request Thông tin batch update
+     * @return BatchOperationResponse
+     */
+    com.foodorder.backend.comment.dto.response.BatchOperationResponse batchUpdateStatus(
+            com.foodorder.backend.comment.dto.request.BatchUpdateStatusRequest request
+    );
+
+    /**
+     * [ADMIN] Xóa vĩnh viễn nhiều bình luận cùng lúc
+     * @param request Thông tin batch delete
+     * @return BatchOperationResponse
+     */
+    com.foodorder.backend.comment.dto.response.BatchOperationResponse batchHardDelete(
+            com.foodorder.backend.comment.dto.request.BatchDeleteRequest request
+    );
 }
 

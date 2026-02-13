@@ -93,5 +93,45 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      */
     @Query("SELECT c FROM Comment c WHERE LOWER(c.content) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY c.createdAt DESC")
     Page<Comment> searchByContent(@Param("keyword") String keyword, Pageable pageable);
+
+    /**
+     * Lấy tất cả bình luận của một user (cho admin)
+     */
+    Page<Comment> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+
+    /**
+     * Lấy bình luận theo target (cho admin - bao gồm cả hidden/deleted)
+     */
+    @Query("SELECT c FROM Comment c WHERE c.targetType = :targetType AND c.targetId = :targetId ORDER BY c.createdAt DESC")
+    Page<Comment> findByTargetTypeAndTargetId(
+            @Param("targetType") TargetType targetType,
+            @Param("targetId") Long targetId,
+            Pageable pageable
+    );
+
+    /**
+     * Đếm số bình luận theo trạng thái
+     */
+    long countByStatus(CommentStatus status);
+
+    /**
+     * Đếm số bình luận được tạo từ một thời điểm
+     */
+    @Query("SELECT COUNT(c) FROM Comment c WHERE c.createdAt >= :fromDate")
+    long countCommentsFromDate(@Param("fromDate") java.time.LocalDateTime fromDate);
+
+    /**
+     * Đếm số bình luận được tạo từ một thời điểm và có trạng thái cụ thể
+     */
+    @Query("SELECT COUNT(c) FROM Comment c WHERE c.createdAt >= :fromDate AND c.status = :status")
+    long countCommentsFromDateWithStatus(
+            @Param("fromDate") java.time.LocalDateTime fromDate,
+            @Param("status") CommentStatus status
+    );
+
+    /**
+     * Tìm nhiều bình luận theo danh sách ID
+     */
+    List<Comment> findByIdIn(List<Long> ids);
 }
 

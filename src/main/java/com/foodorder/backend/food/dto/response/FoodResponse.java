@@ -61,6 +61,9 @@ public class FoodResponse {
     @Schema(description = "Ghi chú trạng thái (VD: lý do hết hàng)", example = "Tạm hết nguyên liệu")
     private String statusNote;
 
+    @Schema(description = "Dữ liệu được bảo vệ (chỉ SUPER_ADMIN có quyền sửa/xóa)", example = "false")
+    private Boolean isProtected;
+
     @Schema(description = "Slug của món ăn (dùng cho URL)", example = "pho-bo-tai")
     private String slug;
 

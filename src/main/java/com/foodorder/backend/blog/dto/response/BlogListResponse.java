@@ -32,6 +32,9 @@ public class BlogListResponse {
 
     private Boolean isFeatured;
 
+    // Đánh dấu dữ liệu được bảo vệ - chỉ SUPER_ADMIN mới có quyền sửa/xóa
+    private Boolean isProtected;
+
     private String tags;
 
     private LocalDateTime publishedAt;
@@ -72,4 +75,3 @@ public class BlogListResponse {
         private String avatarUrl;
     }
 }
-

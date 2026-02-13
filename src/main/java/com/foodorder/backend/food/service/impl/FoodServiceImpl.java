@@ -8,6 +8,7 @@ import com.foodorder.backend.food.dto.response.FoodVariantResponse;
 import com.foodorder.backend.category.entity.Category;
 import com.foodorder.backend.food.entity.Food;
 import com.foodorder.backend.food.entity.FoodImage;
+import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.category.repository.CategoryRepository;
@@ -15,11 +16,16 @@ import com.foodorder.backend.food.repository.FoodImageRepository;
 import com.foodorder.backend.food.repository.FoodRepository;
 import com.foodorder.backend.food.repository.FoodVariantRepository;
 import com.foodorder.backend.food.service.FoodService;
+import com.foodorder.backend.security.CustomUserDetails;
 import com.foodorder.backend.service.S3Service;
+import com.foodorder.backend.user.entity.User;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +36,7 @@ import java.util.stream.Collectors;
 import com.foodorder.backend.food.entity.FoodStatus;
 
 @Service
+@Slf4j
 public class FoodServiceImpl implements FoodService {
 
     @Autowired
@@ -50,6 +57,42 @@ public class FoodServiceImpl implements FoodService {
     @Autowired
     private FoodVariantRepository foodVariantRepository;
 
+    // ==================== Helper Methods ====================
+
+    /**
+     * Lấy thông tin user hiện tại từ SecurityContext
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            return userDetails.getUser();
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra user hiện tại có phải là SUPER_ADMIN không
+     */
+    private boolean isCurrentUserSuperAdmin() {
+        User currentUser = getCurrentUser();
+        return currentUser != null && currentUser.isSuperAdmin();
+    }
+
+    /**
+     * Kiểm tra quyền thao tác trên dữ liệu được bảo vệ
+     * Nếu dữ liệu được bảo vệ (isProtected = true) và user không phải SUPER_ADMIN, throw ForbiddenException
+     */
+    private void checkProtectedDataPermission(Boolean isProtected, String action) {
+        if (Boolean.TRUE.equals(isProtected) && !isCurrentUserSuperAdmin()) {
+            log.warn("User không có quyền {} dữ liệu được bảo vệ", action);
+            throw new ForbiddenException(
+                    "Dữ liệu được bảo vệ, chỉ Super Admin mới có quyền " + action,
+                    "PROTECTED_DATA_ACCESS_DENIED"
+            );
+        }
+    }
+
     private FoodResponse mapToDto(Food food) {
         FoodResponse response = modelMapper.map(food, FoodResponse.class);
 
@@ -69,6 +112,9 @@ public class FoodServiceImpl implements FoodService {
         // Map totalLikes và totalShares (đảm bảo không null)
         response.setTotalLikes(food.getTotalLikes() != null ? food.getTotalLikes() : 0);
         response.setTotalShares(food.getTotalShares() != null ? food.getTotalShares() : 0);
+
+        // Map isProtected
+        response.setIsProtected(food.getIsProtected() != null ? food.getIsProtected() : false);
 
         return response;
     }
@@ -107,12 +153,16 @@ public class FoodServiceImpl implements FoodService {
     }
 
     // UPDATE MÓN ĂN
+    // Nếu món ăn được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật
     @Override
     public FoodResponse updateFood(Long id, FoodRequest foodRequest) {
 
         // Tìm Food hiện tại
         Food existingFood = foodRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND"));
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(existingFood.getIsProtected(), "cập nhật");
 
         // Tìm Category mới
         Category category = categoryRepository.findById(foodRequest.getCategoryId())
@@ -152,11 +202,15 @@ public class FoodServiceImpl implements FoodService {
     }
 
 
+    // Nếu món ăn được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền xóa
     @Override
     public void deleteFood(Long id) {
-        if (!foodRepository.existsById(id)) {
-            throw new ResourceNotFoundException("FOOD_NOT_FOUND: " + id);
-        }
+        Food food = foodRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND: " + id));
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(food.getIsProtected(), "xóa");
+
         foodRepository.deleteById(id);
     }
 
@@ -290,12 +344,16 @@ public class FoodServiceImpl implements FoodService {
     /**
      * Cập nhật trạng thái món ăn (dành cho Staff)
      * Cho phép thay đổi status (AVAILABLE/UNAVAILABLE) hoặc isActive
+     * Nếu món ăn được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật
      */
     @Override
     public FoodResponse updateFoodStatus(Long id, FoodStatusUpdateRequest request) {
         // Tìm món ăn theo ID
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND"));
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(food.getIsProtected(), "cập nhật trạng thái");
 
         // Cập nhật status nếu có
         if (request.getStatus() != null && !request.getStatus().isEmpty()) {

@@ -51,6 +51,9 @@ public class AdminUserResponse {
     @Schema(description = "Đã xác thực email chưa", example = "true")
     private boolean isVerified;
 
+    @Schema(description = "Dữ liệu được bảo vệ (chỉ SUPER_ADMIN có quyền sửa/xóa)", example = "false")
+    private boolean isProtected;
+
     @Schema(description = "Số điểm thưởng hiện tại", example = "500")
     private Integer point;
 
@@ -80,6 +83,7 @@ public class AdminUserResponse {
                 .roleName(user.getRole() != null ? user.getRole().getName() : null)
                 .isActive(user.isActive())
                 .isVerified(user.isVerified())
+                .isProtected(user.isProtected())
                 .point(balance)
                 .lastLogin(user.getLastLogin())
                 .createdAt(user.getCreatedAt())

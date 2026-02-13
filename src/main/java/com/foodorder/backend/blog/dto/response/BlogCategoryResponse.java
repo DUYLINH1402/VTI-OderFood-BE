@@ -26,10 +26,12 @@ public class BlogCategoryResponse {
 
     private Boolean isActive;
 
+    // Đánh dấu dữ liệu được bảo vệ - chỉ SUPER_ADMIN mới có quyền sửa/xóa
+    private Boolean isProtected;
+
     private Long blogCount;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 }
-

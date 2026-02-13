@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,6 +39,11 @@ public class BlogCategory {
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
+
+    // Đánh dấu dữ liệu được bảo vệ - chỉ SUPER_ADMIN mới có quyền sửa/xóa
+    @Column(name = "is_protected")
+    @Builder.Default
+    private Boolean isProtected = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

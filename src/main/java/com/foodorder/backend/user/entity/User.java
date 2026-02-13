@@ -61,6 +61,11 @@ public class User {
     @Builder.Default
     private boolean isVerified = false;
 
+    // Đánh dấu dữ liệu được bảo vệ - chỉ SUPER_ADMIN mới có quyền sửa/xóa
+    @Column(name = "is_protected")
+    @Builder.Default
+    private boolean isProtected = false;
+
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private RewardPoint rewardPoint;
 
@@ -95,6 +100,14 @@ public class User {
      */
     public boolean isAdmin() {
         return role != null && role.isAdmin();
+    }
+
+    /**
+     * Kiểm tra xem user có phải là super admin không
+     * Super Admin có toàn quyền, bao gồm sửa/xóa dữ liệu được bảo vệ
+     */
+    public boolean isSuperAdmin() {
+        return role != null && role.isSuperAdmin();
     }
 
     /**

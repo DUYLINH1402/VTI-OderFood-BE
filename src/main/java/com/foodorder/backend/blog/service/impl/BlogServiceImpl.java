@@ -12,7 +12,9 @@ import com.foodorder.backend.blog.repository.BlogCategoryRepository;
 import com.foodorder.backend.blog.repository.BlogRepository;
 import com.foodorder.backend.blog.service.BlogService;
 import com.foodorder.backend.exception.BadRequestException;
+import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
+import com.foodorder.backend.security.CustomUserDetails;
 import com.foodorder.backend.user.entity.User;
 import com.foodorder.backend.user.repository.UserRepository;
 import com.foodorder.backend.util.SlugUtils;
@@ -24,6 +26,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -261,6 +265,7 @@ public class BlogServiceImpl implements BlogService {
 
     /**
      * Cập nhật bài viết (Admin/Staff)
+     * Nếu bài viết được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật
      */
     @Override
     @Transactional
@@ -269,6 +274,9 @@ public class BlogServiceImpl implements BlogService {
         log.info("Admin: Cập nhật bài viết ID: {}", id);
 
         Blog blog = findBlogById(id);
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(blog.getIsProtected(), "cập nhật");
 
         // Cập nhật slug nếu có
         if (request.getSlug() != null && !request.getSlug().isBlank()) {
@@ -341,6 +349,7 @@ public class BlogServiceImpl implements BlogService {
 
     /**
      * Xóa bài viết (Admin)
+     * Nếu bài viết được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền xóa
      */
     @Override
     @Transactional
@@ -349,6 +358,10 @@ public class BlogServiceImpl implements BlogService {
         log.info("Admin: Xóa bài viết ID: {}", id);
 
         Blog blog = findBlogById(id);
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(blog.getIsProtected(), "xóa");
+
         blogRepository.delete(blog);
 
         log.info("Đã xóa bài viết: ID={}", id);
@@ -356,6 +369,7 @@ public class BlogServiceImpl implements BlogService {
 
     /**
      * Thay đổi trạng thái bài viết (Admin/Staff)
+     * Nếu bài viết được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật trạng thái
      */
     @Override
     @Transactional
@@ -364,6 +378,9 @@ public class BlogServiceImpl implements BlogService {
         log.info("Admin: Cập nhật trạng thái bài viết ID: {} -> {}", id, status);
 
         Blog blog = findBlogById(id);
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(blog.getIsProtected(), "cập nhật trạng thái");
 
         BlogStatus newStatus;
         try {
@@ -427,6 +444,40 @@ public class BlogServiceImpl implements BlogService {
         }
 
         return pageable;
+    }
+
+    /**
+     * Lấy thông tin user hiện tại từ SecurityContext
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            return userDetails.getUser();
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra user hiện tại có phải là SUPER_ADMIN không
+     */
+    private boolean isCurrentUserSuperAdmin() {
+        User currentUser = getCurrentUser();
+        return currentUser != null && currentUser.isSuperAdmin();
+    }
+
+    /**
+     * Kiểm tra quyền thao tác trên dữ liệu được bảo vệ
+     * Nếu dữ liệu được bảo vệ (isProtected = true) và user không phải SUPER_ADMIN, throw ForbiddenException
+     */
+    private void checkProtectedDataPermission(Boolean isProtected, String action) {
+        if (Boolean.TRUE.equals(isProtected) && !isCurrentUserSuperAdmin()) {
+            log.warn("User không có quyền {} dữ liệu được bảo vệ", action);
+            throw new ForbiddenException(
+                    "Dữ liệu được bảo vệ, chỉ Super Admin mới có quyền " + action,
+                    "PROTECTED_DATA_ACCESS_DENIED"
+            );
+        }
     }
 
     /**
@@ -514,6 +565,7 @@ public class BlogServiceImpl implements BlogService {
                 .status(blog.getStatus())
                 .viewCount(blog.getViewCount())
                 .isFeatured(blog.getIsFeatured())
+                .isProtected(blog.getIsProtected())
                 .tags(blog.getTags())
                 .publishedAt(blog.getPublishedAt())
                 .category(categoryInfo)

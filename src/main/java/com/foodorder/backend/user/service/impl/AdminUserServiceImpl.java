@@ -4,7 +4,9 @@ import com.foodorder.backend.auth.entity.UserToken;
 import com.foodorder.backend.auth.entity.UserTokenType;
 import com.foodorder.backend.auth.repository.UserTokenRepository;
 import com.foodorder.backend.exception.BadRequestException;
+import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
+import com.foodorder.backend.security.CustomUserDetails;
 import com.foodorder.backend.service.BrevoEmailService;
 import com.foodorder.backend.user.dto.request.AdminCreateUserRequest;
 import com.foodorder.backend.user.dto.request.AdminUpdateUserRequest;
@@ -24,6 +26,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -52,6 +56,42 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Value("${app.frontend.reset-password-url}")
     private String resetPasswordUrl;
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * Lấy thông tin user hiện tại từ SecurityContext
+     */
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            return userDetails.getUser();
+        }
+        return null;
+    }
+
+    /**
+     * Kiểm tra user hiện tại có phải là SUPER_ADMIN không
+     */
+    private boolean isCurrentUserSuperAdmin() {
+        User currentUser = getCurrentUser();
+        return currentUser != null && currentUser.isSuperAdmin();
+    }
+
+    /**
+     * Kiểm tra quyền thao tác trên dữ liệu được bảo vệ
+     * Nếu dữ liệu được bảo vệ (isProtected = true) và user không phải SUPER_ADMIN, throw ForbiddenException
+     */
+    private void checkProtectedDataPermission(boolean isProtected, String action) {
+        if (isProtected && !isCurrentUserSuperAdmin()) {
+            log.warn("User không có quyền {} dữ liệu được bảo vệ", action);
+            throw new ForbiddenException(
+                    "Dữ liệu được bảo vệ, chỉ Super Admin mới có quyền " + action,
+                    "PROTECTED_DATA_ACCESS_DENIED"
+            );
+        }
+    }
 
     @Override
     @Cacheable(value = ADMIN_USERS_CACHE, key = "#keyword + '_' + #roleCode + '_' + #isActive + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
@@ -136,6 +176,9 @@ public class AdminUserServiceImpl implements AdminUserService {
         User user = userRepository.findUserWithRoleById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "USER_NOT_FOUND"));
 
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(user.isProtected(), "cập nhật");
+
         // Kiểm tra username nếu thay đổi
         if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
             if (userRepository.existsByUsername(request.getUsername())) {
@@ -201,6 +244,9 @@ public class AdminUserServiceImpl implements AdminUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "USER_NOT_FOUND"));
 
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(user.isProtected(), "xóa");
+
         // Không cho phép xóa admin
         if (user.isAdmin()) {
             throw new BadRequestException("Không thể xóa tài khoản admin", "CANNOT_DELETE_ADMIN");
@@ -218,6 +264,9 @@ public class AdminUserServiceImpl implements AdminUserService {
     public AdminUserResponse updateUserStatus(Long userId, AdminUpdateUserStatusRequest request) {
         User user = userRepository.findUserWithRoleById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng", "USER_NOT_FOUND"));
+
+        // Kiểm tra quyền nếu dữ liệu được bảo vệ
+        checkProtectedDataPermission(user.isProtected(), "cập nhật trạng thái");
 
         // Không cho phép khóa admin
         if (user.isAdmin() && !request.getIsActive()) {
