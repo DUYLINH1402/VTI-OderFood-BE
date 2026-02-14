@@ -89,9 +89,9 @@ app:
     oauth2-redirect-url: ${OAUTH2_REDIRECT_URL}
   # Contact module configuration
   admin:
-    email: ${ADMIN_EMAIL}
+    email: ${ADMIN_EMAIL:admin@dongxanhfood.com}
   store:
-    name: ${STORE_NAME}
+    name: ${STORE_NAME:Dong Xanh Food}
 
 # ===========================================
 # Google OAuth 2.0 Configuration
