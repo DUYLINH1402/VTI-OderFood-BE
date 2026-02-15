@@ -25,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.foodorder.backend.config.CacheConfig.BLOG_CATEGORIES_CACHE;
+
 /**
  * Service implementation quản lý danh mục tin tức
  */
@@ -36,7 +38,6 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
     private final BlogCategoryRepository blogCategoryRepository;
     private final BlogRepository blogRepository;
 
-    private static final String BLOG_CATEGORIES_CACHE = "blogCategories";
 
     // ==================== PUBLIC APIs ====================
 

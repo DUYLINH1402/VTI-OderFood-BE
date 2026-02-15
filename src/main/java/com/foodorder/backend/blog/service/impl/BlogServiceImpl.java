@@ -12,6 +12,7 @@ import com.foodorder.backend.blog.entity.BlogType;
 import com.foodorder.backend.blog.repository.BlogCategoryRepository;
 import com.foodorder.backend.blog.repository.BlogRepository;
 import com.foodorder.backend.blog.service.BlogService;
+import com.foodorder.backend.config.CacheConfig;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
@@ -39,6 +40,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.foodorder.backend.config.CacheConfig.*;
+
 /**
  * Service implementation quản lý bài viết/tin tức
  */
@@ -52,9 +55,6 @@ public class BlogServiceImpl implements BlogService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
-    private static final String BLOGS_CACHE = "blogs";
-    private static final String FEATURED_BLOGS_CACHE = "featuredBlogs";
-    private static final String BLOGS_BY_TYPE_CACHE = "blogsByType";
 
     // ==================== PUBLIC APIs ====================
 

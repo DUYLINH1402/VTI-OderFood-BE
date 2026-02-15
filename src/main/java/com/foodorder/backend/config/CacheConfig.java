@@ -45,6 +45,7 @@ public class CacheConfig {
     public static final String BLOGS_CACHE = "blogs";
     public static final String FEATURED_BLOGS_CACHE = "featuredBlogs";
     public static final String BLOG_CATEGORIES_CACHE = "blogCategories";
+    public static final String BLOGS_BY_TYPE_CACHE = "blogsByType";
 
     @Bean
     public CacheManager cacheManager() {
@@ -75,7 +76,8 @@ public class CacheConfig {
                 // Blog Caches
                 new ConcurrentMapCache(BLOGS_CACHE),
                 new ConcurrentMapCache(FEATURED_BLOGS_CACHE),
-                new ConcurrentMapCache(BLOG_CATEGORIES_CACHE)
+                new ConcurrentMapCache(BLOG_CATEGORIES_CACHE),
+                new ConcurrentMapCache(BLOGS_BY_TYPE_CACHE)
         ));
         return cacheManager;
     }
