@@ -4,6 +4,7 @@ import com.foodorder.backend.blog.dto.request.BlogFilterRequest;
 import com.foodorder.backend.blog.dto.request.BlogRequest;
 import com.foodorder.backend.blog.dto.response.BlogListResponse;
 import com.foodorder.backend.blog.dto.response.BlogResponse;
+import com.foodorder.backend.blog.entity.BlogType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -22,6 +23,11 @@ public interface BlogService {
     Page<BlogListResponse> getPublishedBlogs(Pageable pageable);
 
     /**
+     * Lấy danh sách bài viết công khai theo loại nội dung (BlogType)
+     */
+    Page<BlogListResponse> getPublishedBlogsByType(BlogType blogType, Pageable pageable);
+
+    /**
      * Lấy danh sách bài viết công khai theo danh mục
      */
     Page<BlogListResponse> getPublishedBlogsByCategory(Long categoryId, Pageable pageable);
@@ -35,6 +41,11 @@ public interface BlogService {
      * Lấy danh sách bài viết nổi bật
      */
     List<BlogListResponse> getFeaturedBlogs(int limit);
+
+    /**
+     * Lấy danh sách bài viết nổi bật theo loại nội dung
+     */
+    List<BlogListResponse> getFeaturedBlogsByType(BlogType blogType, int limit);
 
     /**
      * Tìm kiếm bài viết công khai theo từ khóa

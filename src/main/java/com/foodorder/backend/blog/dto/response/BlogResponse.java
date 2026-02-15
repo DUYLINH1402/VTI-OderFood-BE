@@ -1,12 +1,18 @@
 package com.foodorder.backend.blog.dto.response;
 
 import com.foodorder.backend.blog.entity.BlogStatus;
+import com.foodorder.backend.blog.entity.BlogType;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * DTO response cho bài viết
+ * Hỗ trợ 3 loại nội dung:
+ * - NEWS_PROMOTIONS: Tin tức, khuyến mãi
+ * - MEDIA_PRESS: Báo chí nói về nhà hàng
+ * - CATERING_SERVICES: Dịch vụ đãi tiệc
  */
 @Getter
 @Setter
@@ -29,6 +35,9 @@ public class BlogResponse {
 
     private BlogStatus status;
 
+    // Loại nội dung
+    private BlogType blogType;
+
     private Integer viewCount;
 
     private Boolean isFeatured;
@@ -37,6 +46,21 @@ public class BlogResponse {
     private Boolean isProtected;
 
     private String tags;
+
+    // ========== MEDIA_PRESS fields ==========
+    private String sourceUrl;
+    private String sourceName;
+    private String sourceLogo;
+    private LocalDateTime sourcePublishedAt;
+
+    // ========== CATERING_SERVICES fields ==========
+    private String priceRange;
+    private String serviceAreas;
+    private String menuItems;
+    private List<String> galleryImages;
+    private Integer minCapacity;
+    private Integer maxCapacity;
+    private String contactInfo;
 
     // SEO fields
     private String metaTitle;

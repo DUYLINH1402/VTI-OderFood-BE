@@ -1,5 +1,6 @@
 package com.foodorder.backend.blog.dto.response;
 
+import com.foodorder.backend.blog.entity.BlogType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,9 @@ public class BlogCategoryResponse {
     private String slug;
 
     private String description;
+
+    // Loại nội dung mà danh mục này thuộc về
+    private BlogType blogType;
 
     private Integer displayOrder;
 

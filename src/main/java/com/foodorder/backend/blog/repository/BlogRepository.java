@@ -2,6 +2,7 @@ package com.foodorder.backend.blog.repository;
 
 import com.foodorder.backend.blog.entity.Blog;
 import com.foodorder.backend.blog.entity.BlogStatus;
+import com.foodorder.backend.blog.entity.BlogType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -129,16 +130,19 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     @Query(value = "SELECT b FROM Blog b LEFT JOIN FETCH b.category LEFT JOIN FETCH b.author " +
             "WHERE (:title IS NULL OR LOWER(b.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +
             "AND (:status IS NULL OR b.status = :status) " +
+            "AND (:blogType IS NULL OR b.blogType = :blogType) " +
             "AND (:categoryId IS NULL OR b.category.id = :categoryId) " +
             "AND (:authorId IS NULL OR b.author.id = :authorId)",
             countQuery = "SELECT COUNT(b) FROM Blog b " +
                     "WHERE (:title IS NULL OR LOWER(b.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +
                     "AND (:status IS NULL OR b.status = :status) " +
+                    "AND (:blogType IS NULL OR b.blogType = :blogType) " +
                     "AND (:categoryId IS NULL OR b.category.id = :categoryId) " +
                     "AND (:authorId IS NULL OR b.author.id = :authorId)")
     Page<Blog> findWithFilter(
             @Param("title") String title,
             @Param("status") BlogStatus status,
+            @Param("blogType") BlogType blogType,
             @Param("categoryId") Long categoryId,
             @Param("authorId") Long authorId,
             Pageable pageable);
@@ -149,9 +153,42 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     long countByStatus(BlogStatus status);
 
     /**
+     * Đếm số bài viết theo loại nội dung
+     */
+    long countByBlogType(BlogType blogType);
+
+    /**
      * Đếm số bài viết theo danh mục
      */
     long countByCategoryId(Long categoryId);
+
+    /**
+     * Lấy danh sách bài viết công khai theo loại nội dung (BlogType)
+     */
+    @Query(value = "SELECT b FROM Blog b LEFT JOIN FETCH b.category LEFT JOIN FETCH b.author " +
+            "WHERE b.status = 'PUBLISHED' " +
+            "AND b.blogType = :blogType " +
+            "AND (b.publishedAt IS NULL OR b.publishedAt <= :now)",
+            countQuery = "SELECT COUNT(b) FROM Blog b WHERE b.status = 'PUBLISHED' " +
+                    "AND b.blogType = :blogType " +
+                    "AND (b.publishedAt IS NULL OR b.publishedAt <= :now)")
+    Page<Blog> findPublishedBlogsByType(
+            @Param("blogType") BlogType blogType,
+            @Param("now") LocalDateTime now,
+            Pageable pageable);
+
+    /**
+     * Lấy danh sách bài viết nổi bật công khai theo loại nội dung
+     */
+    @Query("SELECT b FROM Blog b LEFT JOIN FETCH b.category LEFT JOIN FETCH b.author " +
+            "WHERE b.status = 'PUBLISHED' " +
+            "AND b.blogType = :blogType " +
+            "AND b.isFeatured = true " +
+            "AND (b.publishedAt IS NULL OR b.publishedAt <= :now)")
+    List<Blog> findFeaturedBlogsByType(
+            @Param("blogType") BlogType blogType,
+            @Param("now") LocalDateTime now,
+            Pageable pageable);
 
     /**
      * Lấy bài viết liên quan (cùng danh mục, loại trừ bài hiện tại)

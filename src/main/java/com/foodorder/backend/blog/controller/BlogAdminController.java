@@ -7,6 +7,7 @@ import com.foodorder.backend.blog.dto.response.BlogCategoryResponse;
 import com.foodorder.backend.blog.dto.response.BlogListResponse;
 import com.foodorder.backend.blog.dto.response.BlogResponse;
 import com.foodorder.backend.blog.entity.BlogStatus;
+import com.foodorder.backend.blog.entity.BlogType;
 import com.foodorder.backend.blog.service.BlogCategoryService;
 import com.foodorder.backend.blog.service.BlogService;
 import com.foodorder.backend.security.CustomUserDetails;
@@ -54,6 +55,8 @@ public class BlogAdminController {
             @RequestParam(required = false) String title,
             @Parameter(description = "Trạng thái bài viết")
             @RequestParam(required = false) BlogStatus status,
+            @Parameter(description = "Loại nội dung (NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES)")
+            @RequestParam(required = false) BlogType blogType,
             @Parameter(description = "ID danh mục")
             @RequestParam(required = false) Long categoryId,
             @Parameter(description = "ID tác giả")
@@ -64,6 +67,7 @@ public class BlogAdminController {
         BlogFilterRequest filterRequest = BlogFilterRequest.builder()
                 .title(title)
                 .status(status)
+                .blogType(blogType)
                 .categoryId(categoryId)
                 .authorId(authorId)
                 .build();
@@ -137,6 +141,16 @@ public class BlogAdminController {
     @GetMapping("/categories")
     public ResponseEntity<List<BlogCategoryResponse>> getAllCategories() {
         return ResponseEntity.ok(blogCategoryService.getAllCategories());
+    }
+
+    @Operation(summary = "Lấy tất cả danh mục theo loại nội dung",
+            description = "Lấy danh sách danh mục theo loại: NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @GetMapping("/categories/type/{blogType}")
+    public ResponseEntity<List<BlogCategoryResponse>> getAllCategoriesByType(
+            @Parameter(description = "Loại nội dung (NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES)", required = true)
+            @PathVariable BlogType blogType) {
+        return ResponseEntity.ok(blogCategoryService.getAllCategoriesByType(blogType));
     }
 
     @Operation(summary = "Lấy chi tiết danh mục theo ID",

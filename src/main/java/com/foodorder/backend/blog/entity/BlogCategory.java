@@ -8,10 +8,17 @@ import java.util.List;
 
 /**
  * Entity đại diện cho danh mục tin tức/bài viết
- * Giúp phân loại tin tức (ví dụ: Khuyến mãi, Review món ăn, Tin nội bộ)
+ * Giúp phân loại tin tức theo từng loại nội dung (BlogType)
+ * Ví dụ:
+ * - NEWS_PROMOTIONS: Khuyến mãi, Review món ăn, Tin nội bộ
+ * - MEDIA_PRESS: VnExpress, Tuổi Trẻ, Dân Trí
+ * - CATERING_SERVICES: Tiệc cưới, Tiệc sinh nhật, Tiệc công ty
  */
 @Entity
-@Table(name = "blog_categories")
+@Table(name = "blog_categories", indexes = {
+        @Index(name = "idx_blog_categories_slug", columnList = "slug"),
+        @Index(name = "idx_blog_categories_blog_type", columnList = "blog_type")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,6 +38,12 @@ public class BlogCategory {
 
     @Column(name = "description", length = 500)
     private String description;
+
+    // Loại nội dung mà danh mục này thuộc về
+    @Enumerated(EnumType.STRING)
+    @Column(name = "blog_type", nullable = false, length = 30)
+    @Builder.Default
+    private BlogType blogType = BlogType.NEWS_PROMOTIONS;
 
     @Column(name = "display_order")
     @Builder.Default

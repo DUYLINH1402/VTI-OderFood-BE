@@ -8,6 +8,7 @@ import com.foodorder.backend.blog.dto.response.BlogResponse;
 import com.foodorder.backend.blog.entity.Blog;
 import com.foodorder.backend.blog.entity.BlogCategory;
 import com.foodorder.backend.blog.entity.BlogStatus;
+import com.foodorder.backend.blog.entity.BlogType;
 import com.foodorder.backend.blog.repository.BlogCategoryRepository;
 import com.foodorder.backend.blog.repository.BlogRepository;
 import com.foodorder.backend.blog.service.BlogService;
@@ -18,6 +19,8 @@ import com.foodorder.backend.security.CustomUserDetails;
 import com.foodorder.backend.user.entity.User;
 import com.foodorder.backend.user.repository.UserRepository;
 import com.foodorder.backend.util.SlugUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -32,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,9 +50,11 @@ public class BlogServiceImpl implements BlogService {
     private final BlogRepository blogRepository;
     private final BlogCategoryRepository blogCategoryRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     private static final String BLOGS_CACHE = "blogs";
     private static final String FEATURED_BLOGS_CACHE = "featuredBlogs";
+    private static final String BLOGS_BY_TYPE_CACHE = "blogsByType";
 
     // ==================== PUBLIC APIs ====================
 
@@ -61,6 +67,18 @@ public class BlogServiceImpl implements BlogService {
         log.info("Lấy danh sách bài viết công khai - page: {}", pageable.getPageNumber());
         Pageable pageableWithSort = addDefaultSort(pageable);
         return blogRepository.findPublishedBlogs(LocalDateTime.now(), pageableWithSort)
+                .map(this::toListResponse);
+    }
+
+    /**
+     * Lấy danh sách bài viết công khai theo loại nội dung (BlogType)
+     */
+    @Override
+    @Cacheable(value = BLOGS_BY_TYPE_CACHE, key = "'type_' + #blogType + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    public Page<BlogListResponse> getPublishedBlogsByType(BlogType blogType, Pageable pageable) {
+        log.info("Lấy danh sách bài viết theo loại nội dung: {}", blogType);
+        Pageable pageableWithSort = addDefaultSort(pageable);
+        return blogRepository.findPublishedBlogsByType(blogType, LocalDateTime.now(), pageableWithSort)
                 .map(this::toListResponse);
     }
 
@@ -95,6 +113,20 @@ public class BlogServiceImpl implements BlogService {
         log.info("Lấy danh sách {} bài viết nổi bật", limit);
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
         return blogRepository.findFeaturedBlogs(LocalDateTime.now(), pageable)
+                .stream()
+                .map(this::toListResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy danh sách bài viết nổi bật theo loại nội dung
+     */
+    @Override
+    @Cacheable(value = FEATURED_BLOGS_CACHE, key = "'featured_type_' + #blogType + '_' + #limit")
+    public List<BlogListResponse> getFeaturedBlogsByType(BlogType blogType, int limit) {
+        log.info("Lấy danh sách {} bài viết nổi bật loại {}", limit, blogType);
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "publishedAt"));
+        return blogRepository.findFeaturedBlogsByType(blogType, LocalDateTime.now(), pageable)
                 .stream()
                 .map(this::toListResponse)
                 .collect(Collectors.toList());
@@ -173,6 +205,7 @@ public class BlogServiceImpl implements BlogService {
         return blogRepository.findWithFilter(
                         filterRequest.getTitle(),
                         filterRequest.getStatus(),
+                        filterRequest.getBlogType(),
                         filterRequest.getCategoryId(),
                         filterRequest.getAuthorId(),
                         pageableWithSort)
@@ -194,7 +227,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
     public BlogResponse createBlog(BlogRequest request, Long authorId) {
         log.info("Admin: Tạo bài viết mới: {}", request.getTitle());
 
@@ -240,6 +273,15 @@ public class BlogServiceImpl implements BlogService {
             publishedAt = LocalDateTime.now();
         }
 
+        // Xác định BlogType (mặc định NEWS_PROMOTIONS nếu không truyền)
+        BlogType blogType = request.getBlogType() != null ? request.getBlogType() : BlogType.NEWS_PROMOTIONS;
+
+        // Xử lý galleryImages từ List sang JSON string
+        String galleryImagesJson = null;
+        if (request.getGalleryImages() != null && !request.getGalleryImages().isEmpty()) {
+            galleryImagesJson = convertListToJson(request.getGalleryImages());
+        }
+
         Blog blog = Blog.builder()
                 .title(request.getTitle())
                 .slug(slug)
@@ -247,9 +289,24 @@ public class BlogServiceImpl implements BlogService {
                 .content(request.getContent())
                 .thumbnail(request.getThumbnail())
                 .status(status)
+                .blogType(blogType)
                 .viewCount(0)
                 .isFeatured(request.getIsFeatured() != null ? request.getIsFeatured() : false)
                 .tags(request.getTags())
+                // MEDIA_PRESS fields
+                .sourceUrl(request.getSourceUrl())
+                .sourceName(request.getSourceName())
+                .sourceLogo(request.getSourceLogo())
+                .sourcePublishedAt(request.getSourcePublishedAt())
+                // CATERING_SERVICES fields
+                .priceRange(request.getPriceRange())
+                .serviceAreas(request.getServiceAreas())
+                .menuItems(request.getMenuItems())
+                .galleryImages(galleryImagesJson)
+                .minCapacity(request.getMinCapacity())
+                .maxCapacity(request.getMaxCapacity())
+                .contactInfo(request.getContactInfo())
+                // SEO fields
                 .metaTitle(request.getMetaTitle())
                 .metaDescription(request.getMetaDescription())
                 .publishedAt(publishedAt)
@@ -269,7 +326,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
     public BlogResponse updateBlog(Long id, BlogRequest request) {
         log.info("Admin: Cập nhật bài viết ID: {}", id);
 
@@ -318,6 +375,48 @@ public class BlogServiceImpl implements BlogService {
             blog.setPublishedAt(request.getPublishedAt());
         }
 
+        // Cập nhật BlogType nếu có
+        if (request.getBlogType() != null) {
+            blog.setBlogType(request.getBlogType());
+        }
+
+        // Cập nhật MEDIA_PRESS fields
+        if (request.getSourceUrl() != null) {
+            blog.setSourceUrl(request.getSourceUrl());
+        }
+        if (request.getSourceName() != null) {
+            blog.setSourceName(request.getSourceName());
+        }
+        if (request.getSourceLogo() != null) {
+            blog.setSourceLogo(request.getSourceLogo());
+        }
+        if (request.getSourcePublishedAt() != null) {
+            blog.setSourcePublishedAt(request.getSourcePublishedAt());
+        }
+
+        // Cập nhật CATERING_SERVICES fields
+        if (request.getPriceRange() != null) {
+            blog.setPriceRange(request.getPriceRange());
+        }
+        if (request.getServiceAreas() != null) {
+            blog.setServiceAreas(request.getServiceAreas());
+        }
+        if (request.getMenuItems() != null) {
+            blog.setMenuItems(request.getMenuItems());
+        }
+        if (request.getGalleryImages() != null) {
+            blog.setGalleryImages(convertListToJson(request.getGalleryImages()));
+        }
+        if (request.getMinCapacity() != null) {
+            blog.setMinCapacity(request.getMinCapacity());
+        }
+        if (request.getMaxCapacity() != null) {
+            blog.setMaxCapacity(request.getMaxCapacity());
+        }
+        if (request.getContactInfo() != null) {
+            blog.setContactInfo(request.getContactInfo());
+        }
+
         // Cập nhật status
         if (request.getStatus() != null) {
             BlogStatus oldStatus = blog.getStatus();
@@ -353,7 +452,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
     public void deleteBlog(Long id) {
         log.info("Admin: Xóa bài viết ID: {}", id);
 
@@ -373,7 +472,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
     public BlogResponse updateBlogStatus(Long id, String status) {
         log.info("Admin: Cập nhật trạng thái bài viết ID: {} -> {}", id, status);
 
@@ -510,6 +609,7 @@ public class BlogServiceImpl implements BlogService {
                     .id(blog.getCategory().getId())
                     .name(blog.getCategory().getName())
                     .slug(blog.getCategory().getSlug())
+                    .blogType(blog.getCategory().getBlogType())
                     .build();
         }
 
@@ -521,9 +621,25 @@ public class BlogServiceImpl implements BlogService {
                 .content(blog.getContent())
                 .thumbnail(blog.getThumbnail())
                 .status(blog.getStatus())
+                .blogType(blog.getBlogType())
                 .viewCount(blog.getViewCount())
                 .isFeatured(blog.getIsFeatured())
+                .isProtected(blog.getIsProtected())
                 .tags(blog.getTags())
+                // MEDIA_PRESS fields
+                .sourceUrl(blog.getSourceUrl())
+                .sourceName(blog.getSourceName())
+                .sourceLogo(blog.getSourceLogo())
+                .sourcePublishedAt(blog.getSourcePublishedAt())
+                // CATERING_SERVICES fields
+                .priceRange(blog.getPriceRange())
+                .serviceAreas(blog.getServiceAreas())
+                .menuItems(blog.getMenuItems())
+                .galleryImages(convertJsonToList(blog.getGalleryImages()))
+                .minCapacity(blog.getMinCapacity())
+                .maxCapacity(blog.getMaxCapacity())
+                .contactInfo(blog.getContactInfo())
+                // SEO fields
                 .metaTitle(blog.getMetaTitle())
                 .metaDescription(blog.getMetaDescription())
                 .publishedAt(blog.getPublishedAt())
@@ -563,15 +679,50 @@ public class BlogServiceImpl implements BlogService {
                 .summary(blog.getSummary())
                 .thumbnail(blog.getThumbnail())
                 .status(blog.getStatus())
+                .blogType(blog.getBlogType())
                 .viewCount(blog.getViewCount())
                 .isFeatured(blog.getIsFeatured())
                 .isProtected(blog.getIsProtected())
                 .tags(blog.getTags())
+                // MEDIA_PRESS - chỉ hiển thị sourceName trong list
+                .sourceName(blog.getSourceName())
+                // CATERING_SERVICES - chỉ hiển thị priceRange trong list
+                .priceRange(blog.getPriceRange())
                 .publishedAt(blog.getPublishedAt())
                 .category(categoryInfo)
                 .author(authorInfo)
                 .createdAt(blog.getCreatedAt())
                 .build();
+    }
+
+    /**
+     * Convert List<String> thành JSON string
+     */
+    private String convertListToJson(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            log.error("Lỗi khi convert list sang JSON: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Convert JSON string thành List<String>
+     */
+    private List<String> convertJsonToList(String json) {
+        if (json == null || json.isBlank()) {
+            return Collections.emptyList();
+        }
+        try {
+            return objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+        } catch (JsonProcessingException e) {
+            log.error("Lỗi khi convert JSON sang list: {}", e.getMessage());
+            return Collections.emptyList();
+        }
     }
 }
 

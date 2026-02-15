@@ -3,6 +3,7 @@ package com.foodorder.backend.blog.controller;
 import com.foodorder.backend.blog.dto.response.BlogCategoryResponse;
 import com.foodorder.backend.blog.dto.response.BlogListResponse;
 import com.foodorder.backend.blog.dto.response.BlogResponse;
+import com.foodorder.backend.blog.entity.BlogType;
 import com.foodorder.backend.blog.service.BlogCategoryService;
 import com.foodorder.backend.blog.service.BlogService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,6 +62,36 @@ public class BlogController {
                 .body(blogService.getFeaturedBlogs(limit));
     }
 
+    // ==================== BLOG TYPE APIs ====================
+
+    @Operation(summary = "Lấy danh sách bài viết theo loại nội dung",
+            description = "Lấy danh sách bài viết theo loại: NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @GetMapping("/type/{blogType}")
+    public ResponseEntity<Page<BlogListResponse>> getBlogsByType(
+            @Parameter(description = "Loại nội dung (NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES)", required = true)
+            @PathVariable BlogType blogType,
+            @Parameter(description = "Thông tin phân trang")
+            @PageableDefault(size = 10, sort = "publishedAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
+                .body(blogService.getPublishedBlogsByType(blogType, pageable));
+    }
+
+    @Operation(summary = "Lấy danh sách bài viết nổi bật theo loại nội dung",
+            description = "Lấy danh sách bài viết nổi bật theo loại: NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @GetMapping("/type/{blogType}/featured")
+    public ResponseEntity<List<BlogListResponse>> getFeaturedBlogsByType(
+            @Parameter(description = "Loại nội dung (NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES)", required = true)
+            @PathVariable BlogType blogType,
+            @Parameter(description = "Số lượng bài viết cần lấy")
+            @RequestParam(defaultValue = "6") int limit) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
+                .body(blogService.getFeaturedBlogsByType(blogType, limit));
+    }
+
     @Operation(summary = "Tìm kiếm bài viết",
             description = "Tìm kiếm bài viết theo từ khóa trong tiêu đề, tóm tắt và tags")
     @ApiResponse(responseCode = "200", description = "Thành công")
@@ -107,6 +138,18 @@ public class BlogController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
                 .body(blogCategoryService.getActiveCategories());
+    }
+
+    @Operation(summary = "Lấy danh sách danh mục blog theo loại nội dung",
+            description = "Lấy danh sách danh mục đang hoạt động theo loại: NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES")
+    @ApiResponse(responseCode = "200", description = "Thành công")
+    @GetMapping("/categories/type/{blogType}")
+    public ResponseEntity<List<BlogCategoryResponse>> getActiveCategoriesByType(
+            @Parameter(description = "Loại nội dung (NEWS_PROMOTIONS, MEDIA_PRESS, CATERING_SERVICES)", required = true)
+            @PathVariable BlogType blogType) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.maxAge(5, TimeUnit.MINUTES).cachePublic())
+                .body(blogCategoryService.getActiveCategoriesByType(blogType));
     }
 
     @Operation(summary = "Lấy chi tiết danh mục theo slug",

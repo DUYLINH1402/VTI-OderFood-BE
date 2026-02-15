@@ -3,6 +3,7 @@ package com.foodorder.backend.blog.service.impl;
 import com.foodorder.backend.blog.dto.request.BlogCategoryRequest;
 import com.foodorder.backend.blog.dto.response.BlogCategoryResponse;
 import com.foodorder.backend.blog.entity.BlogCategory;
+import com.foodorder.backend.blog.entity.BlogType;
 import com.foodorder.backend.blog.repository.BlogCategoryRepository;
 import com.foodorder.backend.blog.repository.BlogRepository;
 import com.foodorder.backend.blog.service.BlogCategoryService;
@@ -53,6 +54,19 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
     }
 
     /**
+     * Lấy danh sách danh mục đang hoạt động theo loại nội dung (có cache)
+     */
+    @Override
+    @Cacheable(value = BLOG_CATEGORIES_CACHE, key = "'active_type_' + #blogType")
+    public List<BlogCategoryResponse> getActiveCategoriesByType(BlogType blogType) {
+        log.info("Lấy danh sách danh mục blog đang hoạt động theo loại: {}", blogType);
+        return blogCategoryRepository.findByIsActiveTrueAndBlogTypeOrderByDisplayOrderAsc(blogType)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Lấy chi tiết danh mục theo slug
      */
     @Override
@@ -83,6 +97,19 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
     public List<BlogCategoryResponse> getAllCategories() {
         log.info("Admin: Lấy tất cả danh mục blog");
         return blogCategoryRepository.findAllByOrderByDisplayOrderAsc()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy tất cả danh mục theo loại nội dung (Admin)
+     */
+    @Override
+    @Cacheable(value = BLOG_CATEGORIES_CACHE, key = "'all_type_' + #blogType")
+    public List<BlogCategoryResponse> getAllCategoriesByType(BlogType blogType) {
+        log.info("Admin: Lấy tất cả danh mục blog theo loại: {}", blogType);
+        return blogCategoryRepository.findByBlogTypeOrderByDisplayOrderAsc(blogType)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -124,6 +151,7 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
                 .name(request.getName())
                 .slug(slug)
                 .description(request.getDescription())
+                .blogType(request.getBlogType() != null ? request.getBlogType() : BlogType.NEWS_PROMOTIONS)
                 .displayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0)
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
@@ -165,6 +193,9 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
         }
         if (request.getDescription() != null) {
             category.setDescription(request.getDescription());
+        }
+        if (request.getBlogType() != null) {
+            category.setBlogType(request.getBlogType());
         }
         if (request.getDisplayOrder() != null) {
             category.setDisplayOrder(request.getDisplayOrder());
@@ -266,6 +297,7 @@ public class BlogCategoryServiceImpl implements BlogCategoryService {
                 .name(category.getName())
                 .slug(category.getSlug())
                 .description(category.getDescription())
+                .blogType(category.getBlogType())
                 .displayOrder(category.getDisplayOrder())
                 .isActive(category.getIsActive())
                 .isProtected(category.getIsProtected())

@@ -1,6 +1,7 @@
 package com.foodorder.backend.blog.repository;
 
 import com.foodorder.backend.blog.entity.BlogCategory;
+import com.foodorder.backend.blog.entity.BlogType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -34,8 +35,18 @@ public interface BlogCategoryRepository extends JpaRepository<BlogCategory, Long
     List<BlogCategory> findByIsActiveTrueOrderByDisplayOrderAsc();
 
     /**
+     * Lấy danh sách danh mục đang hoạt động theo loại nội dung
+     */
+    List<BlogCategory> findByIsActiveTrueAndBlogTypeOrderByDisplayOrderAsc(BlogType blogType);
+
+    /**
      * Lấy tất cả danh mục sắp xếp theo thứ tự hiển thị
      */
     List<BlogCategory> findAllByOrderByDisplayOrderAsc();
+
+    /**
+     * Lấy tất cả danh mục theo loại nội dung
+     */
+    List<BlogCategory> findByBlogTypeOrderByDisplayOrderAsc(BlogType blogType);
 }
 

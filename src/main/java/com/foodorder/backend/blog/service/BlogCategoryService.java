@@ -2,6 +2,7 @@ package com.foodorder.backend.blog.service;
 
 import com.foodorder.backend.blog.dto.request.BlogCategoryRequest;
 import com.foodorder.backend.blog.dto.response.BlogCategoryResponse;
+import com.foodorder.backend.blog.entity.BlogType;
 
 import java.util.List;
 
@@ -18,6 +19,11 @@ public interface BlogCategoryService {
     List<BlogCategoryResponse> getActiveCategories();
 
     /**
+     * Lấy danh sách danh mục đang hoạt động theo loại nội dung (Public)
+     */
+    List<BlogCategoryResponse> getActiveCategoriesByType(BlogType blogType);
+
+    /**
      * Lấy chi tiết danh mục theo slug (Public)
      */
     BlogCategoryResponse getCategoryBySlug(String slug);
@@ -28,6 +34,11 @@ public interface BlogCategoryService {
      * Lấy tất cả danh mục (Admin)
      */
     List<BlogCategoryResponse> getAllCategories();
+
+    /**
+     * Lấy tất cả danh mục theo loại nội dung (Admin)
+     */
+    List<BlogCategoryResponse> getAllCategoriesByType(BlogType blogType);
 
     /**
      * Lấy chi tiết danh mục theo ID (Admin)

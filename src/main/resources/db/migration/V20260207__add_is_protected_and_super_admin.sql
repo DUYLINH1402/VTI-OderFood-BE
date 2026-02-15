@@ -1,5 +1,8 @@
     -- Migration: Thêm trường is_protected cho Blog, BlogCategory, Food và User
 -- Mục đích: Bảo vệ dữ liệu quan trọng, chỉ SUPER_ADMIN mới có quyền sửa/xóa
+-- Tắt chế độ Safe Update
+SET SQL_SAFE_UPDATES = 0;
+
 
 -- Thêm cột is_protected vào bảng blogs (nếu chưa tồn tại)
 -- MySQL 8.0+ hỗ trợ IF NOT EXISTS cho ADD COLUMN

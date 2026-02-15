@@ -1,11 +1,12 @@
 package com.foodorder.backend.blog.dto.request;
 
+import com.foodorder.backend.blog.entity.BlogType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 /**
- * DTO tạo mới danh mục tin tức
+ * DTO tạo mới/cập nhật danh mục tin tức
  */
 @Getter
 @Setter
@@ -23,6 +24,9 @@ public class BlogCategoryRequest {
 
     @Size(max = 500, message = "Mô tả không được vượt quá 500 ký tự")
     private String description;
+
+    // Loại nội dung mà danh mục này thuộc về (mặc định NEWS_PROMOTIONS nếu không truyền)
+    private BlogType blogType;
 
     private Integer displayOrder;
 
