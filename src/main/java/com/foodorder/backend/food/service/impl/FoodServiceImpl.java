@@ -1,5 +1,6 @@
 package com.foodorder.backend.food.service.impl;
 
+import com.foodorder.backend.config.CacheConfig;
 import com.foodorder.backend.food.dto.request.FoodFilterRequest;
 import com.foodorder.backend.food.dto.request.FoodRequest;
 import com.foodorder.backend.food.dto.request.FoodStatusUpdateRequest;
@@ -22,6 +23,9 @@ import com.foodorder.backend.user.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -120,7 +124,17 @@ public class FoodServiceImpl implements FoodService {
     }
 
     // TẠO MÓN ĂN MỚI
+    // Khi tạo mới, xóa cache danh sách để cập nhật dữ liệu mới
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.FOODS_ALL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_NEW_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_FEATURED_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BESTSELLER_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_MANAGEMENT_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOODS_CACHE, allEntries = true)
+    })
     public FoodResponse createFood(FoodRequest foodRequest) {
 
         // Tìm Category tương ứng
@@ -154,7 +168,20 @@ public class FoodServiceImpl implements FoodService {
 
     // UPDATE MÓN ĂN
     // Nếu món ăn được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật
+    // Khi cập nhật, xóa toàn bộ cache liên quan đến món ăn
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.FOODS_ALL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_NEW_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_FEATURED_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BESTSELLER_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOOD_DETAIL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOOD_DETAIL_SLUG_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_MANAGEMENT_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOODS_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOOD_DETAILS_CACHE, allEntries = true)
+    })
     public FoodResponse updateFood(Long id, FoodRequest foodRequest) {
 
         // Tìm Food hiện tại
@@ -203,7 +230,20 @@ public class FoodServiceImpl implements FoodService {
 
 
     // Nếu món ăn được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền xóa
+    // Khi xóa, xóa toàn bộ cache liên quan đến món ăn
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.FOODS_ALL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_NEW_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_FEATURED_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BESTSELLER_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOOD_DETAIL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOOD_DETAIL_SLUG_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_MANAGEMENT_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOODS_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOOD_DETAILS_CACHE, allEntries = true)
+    })
     public void deleteFood(Long id) {
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND: " + id));
@@ -214,37 +254,61 @@ public class FoodServiceImpl implements FoodService {
         foodRepository.deleteById(id);
     }
 
+    /**
+     * Lấy chi tiết món ăn theo ID - Cache theo ID
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOOD_DETAIL_CACHE, key = "#id")
     public FoodResponse getFoodById(Long id) {
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND: " + id));
         return mapToDto(food);
     }
 
+    /**
+     * Lấy tất cả món ăn - Cache theo thông tin phân trang
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_ALL_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getAllFoods( Pageable pageable) {
         return foodRepository.findAll(pageable).map(this::mapToDto);
     }
 
+    /**
+     * Lấy danh sách món ăn mới - Cache theo thông tin phân trang
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_NEW_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getNewFoods(Pageable pageable) {
         Page<Food> foods = foodRepository.findByIsNewTrue(pageable);
         return foods.map(this::mapToDto);
     }
 
+    /**
+     * Lấy danh sách món ăn nổi bật - Cache theo thông tin phân trang
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_FEATURED_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getFeaturedFoods(Pageable pageable) {
         Page<Food> featuredFoods = foodRepository.findByIsFeaturedTrue(pageable);
         return featuredFoods.map(this::mapToDto);
     }
 
+    /**
+     * Lấy danh sách món ăn bán chạy - Cache theo thông tin phân trang
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_BESTSELLER_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getBestSellerFoods(Pageable pageable) {
         Page<Food> bestSellers = foodRepository.findByIsBestSellerTrue(pageable);
         return bestSellers.map(this::mapToDto);
     }
 
+    /**
+     * Lấy món ăn theo danh mục ID - Cache theo categoryId và phân trang
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, key = "#categoryId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getFoodsByCategoryId(Long categoryId, Pageable pageable) {
         // Kiểm tra xem categoryId có tồn tại không
         if (!categoryRepository.existsById(categoryId)) {
@@ -258,7 +322,11 @@ public class FoodServiceImpl implements FoodService {
         return foods.map(this::mapToDto);
     }
 
+    /**
+     * Lấy món ăn theo slug danh mục - Cache theo slug và phân trang
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, key = "'slug_' + #slug + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getFoodsByCategorySlug(String slug, Pageable pageable) {
         // Kiểm tra xem categorySlug có tồn tại không
         Category category = categoryRepository.findBySlug(slug)
@@ -271,7 +339,11 @@ public class FoodServiceImpl implements FoodService {
         return foods.map(this::mapToDto);
     }
 
+    /**
+     * Lấy chi tiết món ăn theo slug - Cache theo slug
+     */
     @Override
+    @Cacheable(value = CacheConfig.FOOD_DETAIL_SLUG_CACHE, key = "#slug")
     public FoodResponse getFoodBySlug(String slug) {
         Food food = foodRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("FOOD_NOT_FOUND_BY_SLUG: " + slug));
@@ -314,8 +386,11 @@ public class FoodServiceImpl implements FoodService {
     /**
      * Lấy danh sách món ăn với bộ lọc cho Staff quản lý
      * Hỗ trợ lọc theo tên, trạng thái, danh mục, trạng thái hoạt động
+     * Cache theo các tham số lọc và phân trang
      */
     @Override
+    @Cacheable(value = CacheConfig.FOODS_MANAGEMENT_CACHE,
+               key = "T(java.util.Objects).hash(#filterRequest.name, #filterRequest.status, #filterRequest.categoryId, #filterRequest.isActive) + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<FoodResponse> getFoodsWithFilter(FoodFilterRequest filterRequest, Pageable pageable) {
         // Chuyển đổi status từ String sang FoodStatus enum (nếu có)
         FoodStatus foodStatus = null;
@@ -345,8 +420,21 @@ public class FoodServiceImpl implements FoodService {
      * Cập nhật trạng thái món ăn (dành cho Staff)
      * Cho phép thay đổi status (AVAILABLE/UNAVAILABLE) hoặc isActive
      * Nếu món ăn được bảo vệ (isProtected = true), chỉ SUPER_ADMIN mới có quyền cập nhật
+     * Khi cập nhật trạng thái, xóa toàn bộ cache liên quan
      */
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.FOODS_ALL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_NEW_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_FEATURED_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BESTSELLER_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOOD_DETAIL_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOOD_DETAIL_SLUG_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_MANAGEMENT_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOODS_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ADMIN_FOOD_DETAILS_CACHE, allEntries = true)
+    })
     public FoodResponse updateFoodStatus(Long id, FoodStatusUpdateRequest request) {
         // Tìm món ăn theo ID
         Food food = foodRepository.findById(id)

@@ -3,6 +3,8 @@ package com.foodorder.backend.food.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 @Getter
@@ -11,7 +13,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Response chứa thông tin chi tiết món ăn")
-public class FoodResponse {
+public class FoodResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "ID của món ăn", example = "1")
     private Long id;

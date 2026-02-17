@@ -3,6 +3,8 @@ package com.foodorder.backend.food.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Getter
@@ -11,7 +13,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Response chứa thông tin biến thể món ăn (size, topping...)")
-public class FoodVariantResponse {
+public class FoodVariantResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "ID của biến thể", example = "1")
     private Long id;

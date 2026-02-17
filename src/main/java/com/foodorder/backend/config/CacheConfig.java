@@ -1,5 +1,10 @@
 package com.foodorder.backend.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -69,6 +74,26 @@ public class CacheConfig {
     public static final String ADMIN_FOOD_DETAILS_CACHE = "adminFoodDetails";
 
     // =============================================
+    // FOOD PUBLIC CACHES
+    // =============================================
+    /** Cache danh sách tất cả món ăn - TTL: 5 phút */
+    public static final String FOODS_ALL_CACHE = "foodsAll";
+    /** Cache danh sách món ăn mới - TTL: 5 phút */
+    public static final String FOODS_NEW_CACHE = "foodsNew";
+    /** Cache danh sách món ăn nổi bật - TTL: 5 phút */
+    public static final String FOODS_FEATURED_CACHE = "foodsFeatured";
+    /** Cache danh sách món ăn bán chạy - TTL: 5 phút */
+    public static final String FOODS_BESTSELLER_CACHE = "foodsBestseller";
+    /** Cache món ăn theo danh mục - TTL: 5 phút */
+    public static final String FOODS_BY_CATEGORY_CACHE = "foodsByCategory";
+    /** Cache chi tiết món ăn theo ID - TTL: 5 phút */
+    public static final String FOOD_DETAIL_CACHE = "foodDetail";
+    /** Cache chi tiết món ăn theo Slug - TTL: 5 phút */
+    public static final String FOOD_DETAIL_SLUG_CACHE = "foodDetailSlug";
+    /** Cache danh sách món ăn quản lý (Staff) - TTL: 5 phút */
+    public static final String FOODS_MANAGEMENT_CACHE = "foodsManagement";
+
+    // =============================================
     // ADVANCED STATISTICS CACHES
     // =============================================
     /** Cache top món bán chạy - TTL: 15 phút */
@@ -125,6 +150,32 @@ public class CacheConfig {
     private static final Duration TTL_VERY_LONG = Duration.ofMinutes(30);
 
     /**
+     * Tạo ObjectMapper hỗ trợ Java 8 date/time types (LocalDateTime, LocalDate, etc.)
+     * Cần thiết để Redis có thể serialize/deserialize các object chứa LocalDateTime
+     *
+     * @return ObjectMapper đã được cấu hình
+     */
+    private ObjectMapper createRedisObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // Đăng ký JavaTimeModule để hỗ trợ LocalDateTime, LocalDate, etc.
+        objectMapper.registerModule(new JavaTimeModule());
+
+        // Tắt việc serialize dates dạng timestamps, serialize thành ISO-8601 string
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // Kích hoạt default typing để lưu thông tin class khi serialize
+        // Điều này cần thiết để deserialize đúng object type từ Redis
+        objectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        return objectMapper;
+    }
+
+    /**
      * Cấu hình RedisCacheManager với TTL riêng cho từng loại cache
      *
      * @param connectionFactory Redis connection factory
@@ -132,11 +183,17 @@ public class CacheConfig {
      */
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // Tạo ObjectMapper hỗ trợ Java 8 date/time
+        ObjectMapper objectMapper = createRedisObjectMapper();
+
+        // Tạo serializer với ObjectMapper đã cấu hình
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+
         // Cấu hình mặc định cho cache
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(TTL_DEFAULT)
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer))
                 .disableCachingNullValues();
 
         // Cấu hình TTL riêng cho từng cache
@@ -159,6 +216,16 @@ public class CacheConfig {
         // FOOD CACHES
         cacheConfigurations.put(ADMIN_FOODS_CACHE, defaultConfig.entryTtl(TTL_MEDIUM));
         cacheConfigurations.put(ADMIN_FOOD_DETAILS_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+
+        // FOOD PUBLIC CACHES
+        cacheConfigurations.put(FOODS_ALL_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOODS_NEW_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOODS_FEATURED_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOODS_BESTSELLER_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOODS_BY_CATEGORY_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOOD_DETAIL_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOOD_DETAIL_SLUG_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+        cacheConfigurations.put(FOODS_MANAGEMENT_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
 
         // ADVANCED STATISTICS CACHES
         cacheConfigurations.put(TOP_SELLING_FOODS_CACHE, defaultConfig.entryTtl(TTL_LONG));
