@@ -70,4 +70,10 @@ public interface FoodRepository extends JpaRepository<Food, Long> {
     @Transactional
     @Query("UPDATE Food f SET f.totalSold = COALESCE(f.totalSold, 0) + :amount WHERE f.id = :foodId")
     void incrementTotalSold(@Param("foodId") Long foodId, @Param("amount") Integer amount);
+
+    /**
+     * Lấy tất cả món ăn đang hoạt động (dùng cho đồng bộ Elasticsearch)
+     */
+    @Query("SELECT f FROM Food f LEFT JOIN FETCH f.category WHERE f.isActive = true")
+    List<Food> findAllByIsActiveTrue();
 }

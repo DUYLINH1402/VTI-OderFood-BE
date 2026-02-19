@@ -200,6 +200,13 @@
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
 
+		<!-- Algolia Search Client -->
+		<dependency>
+			<groupId>com.algolia</groupId>
+			<artifactId>algoliasearch</artifactId>
+			<version>4.4.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

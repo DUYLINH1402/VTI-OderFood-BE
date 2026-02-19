@@ -3,9 +3,15 @@ package com.foodorder.backend.category.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Data
 @Schema(description = "Response chứa thông tin danh mục món ăn")
-public class CategoryResponse {
+public class CategoryResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "ID của danh mục", example = "1")
     private Long id;

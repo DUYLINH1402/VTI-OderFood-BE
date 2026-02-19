@@ -12,7 +12,7 @@ import com.foodorder.backend.blog.entity.BlogType;
 import com.foodorder.backend.blog.repository.BlogCategoryRepository;
 import com.foodorder.backend.blog.repository.BlogRepository;
 import com.foodorder.backend.blog.service.BlogService;
-import com.foodorder.backend.config.CacheConfig;
+import com.foodorder.backend.config.RestPage;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
@@ -66,8 +66,9 @@ public class BlogServiceImpl implements BlogService {
     public Page<BlogListResponse> getPublishedBlogs(Pageable pageable) {
         log.info("Lấy danh sách bài viết công khai - page: {}", pageable.getPageNumber());
         Pageable pageableWithSort = addDefaultSort(pageable);
-        return blogRepository.findPublishedBlogs(LocalDateTime.now(), pageableWithSort)
+        Page<BlogListResponse> page = blogRepository.findPublishedBlogs(LocalDateTime.now(), pageableWithSort)
                 .map(this::toListResponse);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -78,30 +79,35 @@ public class BlogServiceImpl implements BlogService {
     public Page<BlogListResponse> getPublishedBlogsByType(BlogType blogType, Pageable pageable) {
         log.info("Lấy danh sách bài viết theo loại nội dung: {}", blogType);
         Pageable pageableWithSort = addDefaultSort(pageable);
-        return blogRepository.findPublishedBlogsByType(blogType, LocalDateTime.now(), pageableWithSort)
+        Page<BlogListResponse> page = blogRepository.findPublishedBlogsByType(blogType, LocalDateTime.now(), pageableWithSort)
                 .map(this::toListResponse);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
      * Lấy danh sách bài viết công khai theo danh mục
      */
     @Override
+    @Cacheable(value = BLOGS_BY_CATEGORY_CACHE, key = "'category_' + #categoryId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<BlogListResponse> getPublishedBlogsByCategory(Long categoryId, Pageable pageable) {
         log.info("Lấy danh sách bài viết theo danh mục ID: {}", categoryId);
         Pageable pageableWithSort = addDefaultSort(pageable);
-        return blogRepository.findPublishedBlogsByCategory(categoryId, LocalDateTime.now(), pageableWithSort)
+        Page<BlogListResponse> page = blogRepository.findPublishedBlogsByCategory(categoryId, LocalDateTime.now(), pageableWithSort)
                 .map(this::toListResponse);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
      * Lấy danh sách bài viết công khai theo slug danh mục
      */
     @Override
+    @Cacheable(value = BLOGS_BY_CATEGORY_CACHE, key = "'slug_' + #categorySlug + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<BlogListResponse> getPublishedBlogsByCategorySlug(String categorySlug, Pageable pageable) {
         log.info("Lấy danh sách bài viết theo slug danh mục: {}", categorySlug);
         Pageable pageableWithSort = addDefaultSort(pageable);
-        return blogRepository.findPublishedBlogsByCategorySlug(categorySlug, LocalDateTime.now(), pageableWithSort)
+        Page<BlogListResponse> page = blogRepository.findPublishedBlogsByCategorySlug(categorySlug, LocalDateTime.now(), pageableWithSort)
                 .map(this::toListResponse);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -169,6 +175,7 @@ public class BlogServiceImpl implements BlogService {
      * Lấy danh sách bài viết liên quan
      */
     @Override
+    @Cacheable(value = RELATED_BLOGS_CACHE, key = "'related_' + #blogId + '_' + #limit")
     public List<BlogListResponse> getRelatedBlogs(Long blogId, int limit) {
         log.info("Lấy danh sách bài viết liên quan với blog ID: {}", blogId);
 
@@ -227,7 +234,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE, BLOGS_BY_CATEGORY_CACHE, RELATED_BLOGS_CACHE}, allEntries = true)
     public BlogResponse createBlog(BlogRequest request, Long authorId) {
         log.info("Admin: Tạo bài viết mới: {}", request.getTitle());
 
@@ -326,7 +333,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE, BLOGS_BY_CATEGORY_CACHE, RELATED_BLOGS_CACHE}, allEntries = true)
     public BlogResponse updateBlog(Long id, BlogRequest request) {
         log.info("Admin: Cập nhật bài viết ID: {}", id);
 
@@ -452,7 +459,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE, BLOGS_BY_CATEGORY_CACHE, RELATED_BLOGS_CACHE}, allEntries = true)
     public void deleteBlog(Long id) {
         log.info("Admin: Xóa bài viết ID: {}", id);
 
@@ -472,7 +479,7 @@ public class BlogServiceImpl implements BlogService {
      */
     @Override
     @Transactional
-    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE}, allEntries = true)
+    @CacheEvict(value = {BLOGS_CACHE, FEATURED_BLOGS_CACHE, BLOGS_BY_TYPE_CACHE, BLOGS_BY_CATEGORY_CACHE, RELATED_BLOGS_CACHE}, allEntries = true)
     public BlogResponse updateBlogStatus(Long id, String status) {
         log.info("Admin: Cập nhật trạng thái bài viết ID: {} -> {}", id, status);
 

@@ -6,8 +6,12 @@ import com.foodorder.backend.category.dto.response.CategoryResponse;
 import com.foodorder.backend.category.entity.Category;
 import com.foodorder.backend.category.repository.CategoryRepository;
 import com.foodorder.backend.category.service.CategoryService;
+import com.foodorder.backend.config.CacheConfig;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -54,6 +58,12 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.ROOT_CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CHILD_CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true)
+    })
     public CategoryResponse createCategory(CategoryRequest request) {
         Category category = mapToEntity(request);
         if (!StringUtils.hasText(request.getSlug())) {
@@ -66,6 +76,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(value = CacheConfig.CATEGORIES_CACHE, key = "'all'")
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll()
                 .stream()
@@ -74,6 +85,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(value = CacheConfig.CATEGORY_DETAIL_CACHE, key = "#id")
     public CategoryResponse getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -81,6 +93,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CATEGORY_DETAIL_CACHE, key = "#id"),
+            @CacheEvict(value = CacheConfig.ROOT_CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CHILD_CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true)
+    })
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
@@ -100,23 +119,33 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = CacheConfig.CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CATEGORY_DETAIL_CACHE, key = "#id"),
+            @CacheEvict(value = CacheConfig.ROOT_CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.CHILD_CATEGORIES_CACHE, allEntries = true),
+            @CacheEvict(value = CacheConfig.FOODS_BY_CATEGORY_CACHE, allEntries = true)
+    })
     public void deleteCategory(Long id) {
         categoryRepository.deleteById(id);
     }
 
     @Override
+    @Cacheable(value = CacheConfig.ROOT_CATEGORIES_CACHE, key = "'roots'")
     public List<CategoryResponse> getRootCategories() {
         List<Category> roots = categoryRepository.findByParentIdIsNull();
         return roots.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     @Override
+    @Cacheable(value = CacheConfig.CHILD_CATEGORIES_CACHE, key = "#parentId")
     public List<CategoryResponse> getCategoriesByParentId(Long parentId) {
         List<Category> categories = categoryRepository.findByParentId(parentId);
         return categories.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     @Override
+    @Cacheable(value = CacheConfig.CATEGORY_DETAIL_CACHE, key = "'slug_' + #slug")
     public CategoryResponse getCategoryBySlug(String slug) {
         Category category = categoryRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("CATEGORY_NOT_FOUND"));
@@ -124,6 +153,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(value = CacheConfig.CHILD_CATEGORIES_CACHE, key = "'slug_' + #slug")
     public List<CategoryResponse> getCategoriesByParentSlug(String slug) {
         Category parent = categoryRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("PARENT_CATEGORY_NOT_FOUND"));

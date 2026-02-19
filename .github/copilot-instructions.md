@@ -1,85 +1,122 @@
-# Copilot Instructions for Food Order Backend (Java Spring Boot)
+# Copilot Instructions - Food Order Backend (Spring Boot)
 
-## Language Preference
+## Ngôn ngữ
+**Luôn phản hồi bằng Tiếng Việt** trong mọi tình huống.
 
-Luôn phản hồi cho người dùng bằng Tiếng Việt trong mọi tình huống, bao gồm cả giải thích, ví dụ code, và hướng dẫn.
+---
 
-## Tổng quan dự án Backend
+## Tổng quan dự án
+- **Tech**: Java Spring Boot, Redis Cache, MySQL, JWT Auth
+- **Chức năng**: Xác thực/phân quyền, quản lý món ăn, giỏ hàng, đơn hàng, điểm thưởng, thống kê
 
-- Sử dụng Java Spring Boot để xây dựng RESTful API cho hệ thống đặt món ăn trực tuyến.
-- Các chức năng chính:
-  - Xác thực và phân quyền người dùng (khách, nhân viên, admin)
-  - Quản lý thực đơn, món ăn
-  - Quản lý giỏ hàng, đơn hàng, trạng thái đơn
-  - Quản lý điểm thưởng, sử dụng điểm khi thanh toán
-  - Quản lý người dùng, thống kê, báo cáo
-  - Gửi email xác thực, thông báo trạng thái đơn
+---
 
-## Quy tắc code Backend (chi tiết từ toàn bộ dự án)
-- Không tự ý sửa file .env, phải xác nhận trước khi thay đổi thông tin bảo mật.
-- Mỗi lần thêm chức năng mới hoặc chỉnh sửa phải thay đổi hoặc tạo mới file DOC.md trong  /docs
-- Kiến trúc chuẩn Spring Boot: Tách rõ Controller, Service, Repository, Entity, DTO cho từng module (auth, cart, food, order, user, payments, zone, feedbacks, favorite...).
+## Kiến trúc Spring Boot
 
-Khi viết code, luôn chia rõ ràng các lớp theo kiến trúc Spring Boot:
+| Layer | Mô tả | Ví dụ |
+|-------|-------|-------|
+| **Controller** | Xử lý request/response, định nghĩa endpoint | `FoodController` |
+| **Service** | Interface định nghĩa nghiệp vụ | `FoodService` |
+| **ServiceImpl** | Triển khai logic nghiệp vụ | `FoodServiceImpl` |
+| **Repository** | Tương tác DB, truy vấn dữ liệu | `FoodRepository` |
+| **Entity** | Ánh xạ bảng DB | `Food` |
+| **DTO** | Request/Response object | `FoodRequest`, `FoodResponse` |
 
-- Controller: Xử lý request/response, định nghĩa endpoint, không chứa logic nghiệp vụ.
-- Service: Chứa logic nghiệp vụ, xử lý dữ liệu, gọi repository, tách riêng cho từng module. Nên chia thành interface (Service) và lớp triển khai (ServiceImpl) để dễ mở rộng, test và quản lý nghiệp vụ phức tạp.
-- Repository: Tương tác với database, chỉ chứa các phương thức truy vấn dữ liệu.
-- Entity: Định nghĩa cấu trúc bảng dữ liệu, ánh xạ với DB, viết rõ các ràng buộc cho tưgf trường
-- DTO: Định nghĩa dữ liệu truyền qua API, tách biệt với entity để bảo mật và dễ mở rộng.
-- Các import không viết vào dưới cùng, mà để ở đầu file để dễ dàng quản lý và đọc code.
-Ví dụ:
+---
 
-- `FoodController` chỉ nhận request, trả response, gọi tới `FoodService`.
-- `FoodService` là interface định nghĩa các nghiệp vụ, còn `FoodServiceImpl` triển khai chi tiết nghiệp vụ, gọi `FoodRepository`.
-- `FoodRepository` thực hiện truy vấn DB cho entity `Food`.
-- `FoodDTO` dùng cho request/response, không dùng trực tiếp entity.
+## Quy tắc code
 
-Luôn comment rõ ràng ở các hàm xử lý nghiệp vụ hoặc logic phức tạp để dễ bảo trì và review code.
+### Cấu trúc & Convention
+- Import đặt ở **đầu file**
+- Endpoint RESTful: `/api/foods`, `/api/cart`, `/api/orders`
+- Sử dụng `@Valid` cho validation DTO
+- Comment rõ ràng cho logic phức tạp
+- Phân quyền: `@PreAuthorize`, `@RequireStaff`, `@RequireAdmin`
 
-- Sử dụng annotation: @RestController, @Service, @Repository, @Entity, @RequestMapping, @Valid, @Autowired, @CrossOrigin, @Builder, @Getter, @Setter, @NoArgsConstructor, @AllArgsConstructor, @PreAuthorize...
-- Quản lý lỗi tập trung: Dùng GlobalExceptionHandler để xử lý và trả về lỗi chuẩn hóa (ApiError, BadRequestException, ResourceNotFoundException...).
-- Đặt tên endpoint rõ ràng, tuân thủ RESTful: Ví dụ `/api/foods/new`, `/api/cart`, `/api/order`, `/api/user`, `/api/payments`.
-- Validate dữ liệu đầu vào: Sử dụng annotation và custom validator (ví dụ: ValidPasswordValidator, @Valid cho DTO).
-- Sử dụng DTO cho request/response: Tách biệt entity và dữ liệu truyền qua API, giúp bảo mật và dễ mở rộng.
-- Comment cho logic phức tạp hoặc nghiệp vụ đặc thù: Đặc biệt ở các hàm xử lý nghiệp vụ, validator, exception.
-- Quản lý phân quyền, xác thực: Sử dụng JWT, CustomUserDetails, @PreAuthorize, phân quyền cho các loại user (khách, nhân viên, admin).
-- Tối ưu hiệu năng truy vấn DB: Sử dụng Pageable cho phân trang, query rõ ràng, repository riêng cho từng entity.
-- Quản lý trạng thái đơn hàng, giỏ hàng, thực đơn, điểm thưởng: Tách service cho từng nghiệp vụ, entity rõ ràng cho từng loại dữ liệu.
-- Sử dụng migration SQL cho thay đổi cấu trúc DB: Quản lý version, dễ bảo trì.
-- Luôn trả về thông báo lỗi rõ ràng, dễ hiểu cho client: Thống nhất format lỗi, status code.
-- Quy trình phát triển: Sử dụng branch cho từng tính năng, commit message rõ ràng, review code trước khi merge, viết test cho các service/controller quan trọng, dùng môi trường dev/test trước khi lên production.
-- Lưu ý bảo mật: Luôn kiểm tra xác thực và phân quyền trước các thao tác nhạy cảm, sử dụng biến môi trường cho thông tin bảo mật, đảm bảo bảo mật dữ liệu người dùng.
-- Khi trả về message lỗi cho FE, luôn trả về dưới dạng mã lỗi chuẩn hóa (errorCode), ví dụ: COUPON_NOT_FOUND, INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED... FE sẽ dựa vào errorCode để xử lý và hiển thị thông báo phù hợp. Không trả về message lỗi dạng tự do hoặc chỉ tiếng Anh.
+### Error Handling
+- Sử dụng `GlobalExceptionHandler`
+- Trả về **errorCode chuẩn hóa**: `FOOD_NOT_FOUND`, `INVALID_CREDENTIALS`, `EMAIL_NOT_VERIFIED`
+- Không trả message tự do, FE dựa vào errorCode để hiển thị
 
-## Cấu trúc thư mục Backend
+### Bảo mật
+- Không tự ý sửa file `.env`
+- Kiểm tra xác thực/phân quyền trước thao tác nhạy cảm
+- Sử dụng biến môi trường cho thông tin bảo mật
 
-- `src/main/java/com/foodorder/backend/`: Mã nguồn Java.
-  - `auth/`: Xác thực, phân quyền người dùng.
-  - `cart/`: Quản lý giỏ hàng.
-  - `order/`: Quản lý đơn hàng.
-  - `user/`: Quản lý thông tin người dùng.
-  - ...
-- `src/main/resources/`: Cấu hình, template email, migration SQL.
+---
 
-## Quy trình phát triển
+## 🔴 QUAN TRỌNG: Cache với Redis
 
-- Sử dụng branch cho từng tính năng.
-- Commit message rõ ràng, ngắn gọn, có ý nghĩa.
-- Luôn review code trước khi merge.
-- Sử dụng môi trường dev/test trước khi lên production.
+### Khi nào cần Cache?
+| Loại API | Cần Cache? | TTL đề xuất |
+|----------|------------|-------------|
+| GET danh sách public (foods, blogs) | ✅ Có | 5 phút |
+| GET chi tiết (food detail, blog detail) | ✅ Có | 5 phút |
+| GET thống kê dashboard | ✅ Có | 10-15 phút |
+| GET danh mục, config ít thay đổi | ✅ Có | 30 phút |
+| GET comments, tương tác nhiều | ✅ Có | 3 phút |
+| POST/PUT/DELETE | ❌ Không cache | - |
 
-## Lưu ý đặc biệt
+### TTL (Time To Live) Guidelines
+```
+TTL_SHORT = 3 phút    → Dữ liệu thay đổi thường xuyên (comments)
+TTL_DEFAULT = 5 phút  → Dữ liệu chi tiết, danh sách
+TTL_MEDIUM = 10 phút  → Danh sách admin, thống kê
+TTL_LONG = 15 phút    → Dashboard, reports
+TTL_VERY_LONG = 30 phút → Danh mục, config ít thay đổi
+```
 
-- Luôn kiểm tra xác thực và phân quyền trước các thao tác nhạy cảm.
-- Sử dụng biến môi trường cho thông tin bảo mật.
-- Tối ưu hiệu năng cho các truy vấn DB và API.
-- Đảm bảo bảo mật dữ liệu người dùng.
-- Các Api cần Cache thì luôn ưu tiên để tối ưu dữ liệu (Đã có sẵn CacheConfig trong project)
+### Cách triển khai Cache
 
-## Hướng dẫn cho Copilot
+**1. Thêm cache constant vào `CacheConfig.java`:**
+```java
+public static final String MY_CACHE = "myCache";
+// Thêm vào cacheConfigurations:
+cacheConfigurations.put(MY_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+```
 
-- Khi sinh code, luôn tuân thủ các quy tắc trên.
-- Giải thích bằng Tiếng Việt, ưu tiên ví dụ thực tế từ dự án.
-- Nếu có logic phức tạp, hãy comment rõ ràng.
-- Khi được hỏi về cấu trúc, hãy trả lời dựa trên các mục ở trên.
+**2. Thêm @Cacheable cho GET methods:**
+```java
+@Cacheable(value = CacheConfig.MY_CACHE, key = "#id")
+public MyResponse getById(Long id) { ... }
+
+// Với phân trang:
+@Cacheable(value = CacheConfig.MY_CACHE, 
+           key = "#pageable.pageNumber + '_' + #pageable.pageSize")
+public Page<MyResponse> getAll(Pageable pageable) { ... }
+```
+
+**3. Thêm @CacheEvict cho CUD methods:**
+```java
+@Caching(evict = {
+    @CacheEvict(value = CacheConfig.MY_CACHE, allEntries = true),
+    @CacheEvict(value = CacheConfig.MY_DETAIL_CACHE, allEntries = true)
+})
+public MyResponse create(MyRequest request) { ... }
+```
+
+**4. DTO phải implement Serializable:**
+```java
+public class MyResponse implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+    // fields...
+}
+```
+
+---
+
+## Tài liệu
+- **Mỗi lần thêm/sửa chức năng** → Cập nhật hoặc tạo file `.md` trong `/docs`
+
+---
+
+## Checklist khi tạo API mới
+
+- [ ] Tách đúng Controller → Service → ServiceImpl → Repository
+- [ ] Sử dụng DTO cho request/response (implement Serializable nếu cần cache)
+- [ ] Validate với `@Valid`
+- [ ] Phân quyền phù hợp (`@RequireStaff`, `@RequireAdmin`)
+- [ ] Error trả về errorCode chuẩn
+- [ ] **Xem xét thêm Cache** cho GET APIs
+- [ ] Cập nhật tài liệu trong `/docs`

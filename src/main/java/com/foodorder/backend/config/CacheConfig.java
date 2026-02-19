@@ -134,6 +134,36 @@ public class CacheConfig {
     public static final String BLOG_CATEGORIES_CACHE = "blogCategories";
     /** Cache blogs theo loại - TTL: 10 phút */
     public static final String BLOGS_BY_TYPE_CACHE = "blogsByType";
+    /** Cache blogs theo danh mục - TTL: 10 phút */
+    public static final String BLOGS_BY_CATEGORY_CACHE = "blogsByCategory";
+    /** Cache bài viết liên quan - TTL: 10 phút */
+    public static final String RELATED_BLOGS_CACHE = "relatedBlogs";
+
+    // =============================================
+    // CATEGORY CACHES
+    // =============================================
+    /** Cache danh sách danh mục - TTL: 30 phút (ít thay đổi) */
+    public static final String CATEGORIES_CACHE = "categories";
+    /** Cache chi tiết danh mục - TTL: 30 phút */
+    public static final String CATEGORY_DETAIL_CACHE = "categoryDetail";
+    /** Cache danh mục gốc - TTL: 30 phút */
+    public static final String ROOT_CATEGORIES_CACHE = "rootCategories";
+    /** Cache danh mục con - TTL: 30 phút */
+    public static final String CHILD_CATEGORIES_CACHE = "childCategories";
+
+    // =============================================
+    // ZONE CACHES (Địa chỉ)
+    // =============================================
+    /** Cache danh sách quận/huyện - TTL: 1 giờ (rất ít thay đổi) */
+    public static final String DISTRICTS_CACHE = "districts";
+    /** Cache danh sách phường/xã theo quận - TTL: 1 giờ */
+    public static final String WARDS_BY_DISTRICT_CACHE = "wardsByDistrict";
+
+    // =============================================
+    // COUPON PUBLIC CACHES
+    // =============================================
+    /** Cache danh sách coupon công khai - TTL: 5 phút */
+    public static final String ACTIVE_COUPONS_CACHE = "activeCoupons";
 
     // =============================================
     // TTL DURATIONS (Thời gian hết hạn cache)
@@ -148,6 +178,8 @@ public class CacheConfig {
     private static final Duration TTL_LONG = Duration.ofMinutes(15);
     /** TTL rất dài: 30 phút - Dữ liệu ít thay đổi (danh mục, featured) */
     private static final Duration TTL_VERY_LONG = Duration.ofMinutes(30);
+    /** TTL cực dài: 1 giờ - Dữ liệu hầu như không đổi (địa chỉ, config) */
+    private static final Duration TTL_EXTRA_LONG = Duration.ofHours(1);
 
     /**
      * Tạo ObjectMapper hỗ trợ Java 8 date/time types (LocalDateTime, LocalDate, etc.)
@@ -247,6 +279,21 @@ public class CacheConfig {
         cacheConfigurations.put(FEATURED_BLOGS_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
         cacheConfigurations.put(BLOG_CATEGORIES_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
         cacheConfigurations.put(BLOGS_BY_TYPE_CACHE, defaultConfig.entryTtl(TTL_MEDIUM));
+        cacheConfigurations.put(BLOGS_BY_CATEGORY_CACHE, defaultConfig.entryTtl(TTL_MEDIUM));
+        cacheConfigurations.put(RELATED_BLOGS_CACHE, defaultConfig.entryTtl(TTL_MEDIUM));
+
+        // CATEGORY CACHES
+        cacheConfigurations.put(CATEGORIES_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
+        cacheConfigurations.put(CATEGORY_DETAIL_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
+        cacheConfigurations.put(ROOT_CATEGORIES_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
+        cacheConfigurations.put(CHILD_CATEGORIES_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
+
+        // ZONE CACHES
+        cacheConfigurations.put(DISTRICTS_CACHE, defaultConfig.entryTtl(TTL_EXTRA_LONG));
+        cacheConfigurations.put(WARDS_BY_DISTRICT_CACHE, defaultConfig.entryTtl(TTL_EXTRA_LONG));
+
+        // COUPON PUBLIC CACHES
+        cacheConfigurations.put(ACTIVE_COUPONS_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

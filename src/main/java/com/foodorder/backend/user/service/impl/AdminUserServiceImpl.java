@@ -3,6 +3,7 @@ package com.foodorder.backend.user.service.impl;
 import com.foodorder.backend.auth.entity.UserToken;
 import com.foodorder.backend.auth.entity.UserTokenType;
 import com.foodorder.backend.auth.repository.UserTokenRepository;
+import com.foodorder.backend.config.RestPage;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.exception.ForbiddenException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
@@ -98,7 +99,8 @@ public class AdminUserServiceImpl implements AdminUserService {
     public Page<AdminUserResponse> getAllUsers(String keyword, String roleCode, Boolean isActive, Pageable pageable) {
         log.info("Fetching users from database (not cached)");
         Page<User> users = userRepository.findAllUsersWithFilters(keyword, roleCode, isActive, pageable);
-        return users.map(AdminUserResponse::fromEntity);
+        Page<AdminUserResponse> page = users.map(AdminUserResponse::fromEntity);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     @Override
@@ -111,7 +113,8 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
 
         Page<User> users = userRepository.findAllUsersWithFilters(keyword, roleCode, isActive, pageable);
-        return users.map(AdminUserResponse::fromEntity);
+        Page<AdminUserResponse> page = users.map(AdminUserResponse::fromEntity);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     @Override

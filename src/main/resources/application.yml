@@ -165,3 +165,12 @@ logging:
   level:
     com.foodorder.backend.coupons: DEBUG
     org.springframework.scheduling: INFO
+
+# ===========================================
+# Algolia Search Configuration
+# ===========================================
+algolia:
+  application-id: ${ALGOLIA_APPLICATION_ID}
+  api-key: ${ALGOLIA_API_KEY}
+  index-name: ${ALGOLIA_INDEX_NAME:foods}
+

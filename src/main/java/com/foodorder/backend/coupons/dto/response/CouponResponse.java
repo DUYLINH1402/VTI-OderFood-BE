@@ -5,6 +5,9 @@ import com.foodorder.backend.coupons.entity.CouponType;
 import com.foodorder.backend.coupons.entity.DiscountType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,7 +21,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Response chứa thông tin chi tiết mã giảm giá")
-public class CouponResponse {
+public class CouponResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "ID của coupon", example = "1")
     private Long id;

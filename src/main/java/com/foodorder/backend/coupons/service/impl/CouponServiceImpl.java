@@ -1,5 +1,6 @@
 package com.foodorder.backend.coupons.service.impl;
 
+import com.foodorder.backend.config.CacheConfig;
 import com.foodorder.backend.coupons.dto.request.ApplyCouponRequest;
 import com.foodorder.backend.coupons.dto.request.CouponRequest;
 import com.foodorder.backend.coupons.dto.response.CouponApplyResult;
@@ -17,6 +18,8 @@ import com.foodorder.backend.order.repository.OrderRepository;
 import com.foodorder.backend.exception.BadRequestException;
 import com.foodorder.backend.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -57,6 +60,7 @@ public class CouponServiceImpl implements CouponService {
     // === QUẢN LÝ COUPON CƠ BẢN ===
 
     @Override
+    @CacheEvict(value = CacheConfig.ACTIVE_COUPONS_CACHE, allEntries = true)
     public CouponResponse createCoupon(CouponRequest request) {
         // Validate business rules
         validateCouponRequest(request);
@@ -94,6 +98,7 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
+    @CacheEvict(value = CacheConfig.ACTIVE_COUPONS_CACHE, allEntries = true)
     public CouponResponse updateCoupon(Long id, CouponRequest request) {
         Coupon coupon = couponRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + id, "COUPON_NOT_FOUND"));
@@ -129,6 +134,7 @@ public class CouponServiceImpl implements CouponService {
     }
 
     @Override
+    @CacheEvict(value = CacheConfig.ACTIVE_COUPONS_CACHE, allEntries = true)
     public void deleteCoupon(Long id) {
         Coupon coupon = couponRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Coupon not found with id: " + id, "COUPON_NOT_FOUND"));
@@ -166,6 +172,7 @@ public class CouponServiceImpl implements CouponService {
     // === LOGIC NGHIỆP VỤ COUPON ===
 
     @Override
+    @Cacheable(value = CacheConfig.ACTIVE_COUPONS_CACHE, key = "'public'")
     public List<CouponResponse> getActivePublicCoupons() {
         return couponRepository.findActivePublicCoupons(LocalDateTime.now()).stream()
                 .map(CouponResponse::fromEntity)

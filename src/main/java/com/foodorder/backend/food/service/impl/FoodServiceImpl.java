@@ -1,6 +1,10 @@
 package com.foodorder.backend.food.service.impl;
 
+import com.foodorder.backend.category.repository.CategoryRepository;
 import com.foodorder.backend.config.CacheConfig;
+import com.foodorder.backend.config.RestPage;
+import com.foodorder.backend.exception.BadRequestException;
+import com.foodorder.backend.exception.ResourceNotFoundException;
 import com.foodorder.backend.food.dto.request.FoodFilterRequest;
 import com.foodorder.backend.food.dto.request.FoodRequest;
 import com.foodorder.backend.food.dto.request.FoodStatusUpdateRequest;
@@ -10,12 +14,10 @@ import com.foodorder.backend.category.entity.Category;
 import com.foodorder.backend.food.entity.Food;
 import com.foodorder.backend.food.entity.FoodImage;
 import com.foodorder.backend.exception.ForbiddenException;
-import com.foodorder.backend.exception.ResourceNotFoundException;
-import com.foodorder.backend.exception.BadRequestException;
-import com.foodorder.backend.category.repository.CategoryRepository;
 import com.foodorder.backend.food.repository.FoodImageRepository;
 import com.foodorder.backend.food.repository.FoodRepository;
 import com.foodorder.backend.food.repository.FoodVariantRepository;
+import com.foodorder.backend.search.service.AlgoliaSearchService;
 import com.foodorder.backend.food.service.FoodService;
 import com.foodorder.backend.security.CustomUserDetails;
 import com.foodorder.backend.service.S3Service;
@@ -60,6 +62,9 @@ public class FoodServiceImpl implements FoodService {
 
     @Autowired
     private FoodVariantRepository foodVariantRepository;
+
+    @Autowired
+    private AlgoliaSearchService algoliaSearchService;
 
     // ==================== Helper Methods ====================
 
@@ -162,6 +167,9 @@ public class FoodServiceImpl implements FoodService {
         // Lưu vào database
         Food savedFood = foodRepository.save(food);
 
+        // Đồng bộ lên Algolia (async)
+        algoliaSearchService.syncToAlgolia(savedFood);
+
         // Map sang DTO để trả về response
         return modelMapper.map(savedFood, FoodResponse.class);
     }
@@ -224,6 +232,9 @@ public class FoodServiceImpl implements FoodService {
         // Lưu cập nhật
         Food updatedFood = foodRepository.save(existingFood);
 
+        // Đồng bộ lên Algolia (async)
+        algoliaSearchService.syncToAlgolia(updatedFood);
+
         // Map sang DTO
         return modelMapper.map(updatedFood, FoodResponse.class);
     }
@@ -252,6 +263,9 @@ public class FoodServiceImpl implements FoodService {
         checkProtectedDataPermission(food.getIsProtected(), "xóa");
 
         foodRepository.deleteById(id);
+
+        // Xóa khỏi Algolia (async)
+        algoliaSearchService.removeFromAlgolia(id);
     }
 
     /**
@@ -271,7 +285,8 @@ public class FoodServiceImpl implements FoodService {
     @Override
     @Cacheable(value = CacheConfig.FOODS_ALL_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getAllFoods( Pageable pageable) {
-        return foodRepository.findAll(pageable).map(this::mapToDto);
+        Page<FoodResponse> page = foodRepository.findAll(pageable).map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -281,7 +296,8 @@ public class FoodServiceImpl implements FoodService {
     @Cacheable(value = CacheConfig.FOODS_NEW_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getNewFoods(Pageable pageable) {
         Page<Food> foods = foodRepository.findByIsNewTrue(pageable);
-        return foods.map(this::mapToDto);
+        Page<FoodResponse> page = foods.map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -291,7 +307,8 @@ public class FoodServiceImpl implements FoodService {
     @Cacheable(value = CacheConfig.FOODS_FEATURED_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getFeaturedFoods(Pageable pageable) {
         Page<Food> featuredFoods = foodRepository.findByIsFeaturedTrue(pageable);
-        return featuredFoods.map(this::mapToDto);
+        Page<FoodResponse> page = featuredFoods.map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -301,7 +318,8 @@ public class FoodServiceImpl implements FoodService {
     @Cacheable(value = CacheConfig.FOODS_BESTSELLER_CACHE, key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
     public Page<FoodResponse> getBestSellerFoods(Pageable pageable) {
         Page<Food> bestSellers = foodRepository.findByIsBestSellerTrue(pageable);
-        return bestSellers.map(this::mapToDto);
+        Page<FoodResponse> page = bestSellers.map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -319,7 +337,8 @@ public class FoodServiceImpl implements FoodService {
         Page<Food> foods = foodRepository.findByCategoryId(categoryId, pageable);
 
         // Map từ Page<Food> sang Page<FoodResponse>
-        return foods.map(this::mapToDto);
+        Page<FoodResponse> page = foods.map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -336,7 +355,8 @@ public class FoodServiceImpl implements FoodService {
         Page<Food> foods = foodRepository.findByCategoryId(category.getId(), pageable);
 
         // Map từng đối tượng Food sang FoodResponse (DTO trả về cho FE)
-        return foods.map(this::mapToDto);
+        Page<FoodResponse> page = foods.map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
@@ -390,7 +410,7 @@ public class FoodServiceImpl implements FoodService {
      */
     @Override
     @Cacheable(value = CacheConfig.FOODS_MANAGEMENT_CACHE,
-               key = "T(java.util.Objects).hash(#filterRequest.name, #filterRequest.status, #filterRequest.categoryId, #filterRequest.isActive) + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+            key = "T(java.util.Objects).hash(#filterRequest.name, #filterRequest.status, #filterRequest.categoryId, #filterRequest.isActive) + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<FoodResponse> getFoodsWithFilter(FoodFilterRequest filterRequest, Pageable pageable) {
         // Chuyển đổi status từ String sang FoodStatus enum (nếu có)
         FoodStatus foodStatus = null;
@@ -413,7 +433,8 @@ public class FoodServiceImpl implements FoodService {
         );
 
         // Map từ Page<Food> sang Page<FoodResponse>
-        return foods.map(this::mapToDto);
+        Page<FoodResponse> page = foods.map(this::mapToDto);
+        return new RestPage<>(page.getContent(), page.getPageable(), page.getTotalElements());
     }
 
     /**
