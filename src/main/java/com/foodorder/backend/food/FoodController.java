@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RestController
 @RequestMapping("/api/foods")
-@CrossOrigin("*")
+
 @Tag(name = "Foods", description = "API quản lý món ăn - Public và Staff")
 public class FoodController {
 

@@ -203,6 +203,15 @@ public class SecurityConfig {
         // Cho phép tất cả headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
+        // Expose headers để browser có thể đọc
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Total-Count",
+                "X-Page-Number",
+                "X-Page-Size"
+        ));
+
         // Cho phép credentials (cookies, authorization headers)
         configuration.setAllowCredentials(true);
 

@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
+
 @Tag(name = "Chat", description = "API chat giữa User và Staff")
 public class ChatController {
 

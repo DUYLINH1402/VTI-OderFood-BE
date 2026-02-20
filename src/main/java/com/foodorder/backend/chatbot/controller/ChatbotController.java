@@ -26,7 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chatbot")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @Slf4j
 @Tag(name = "Chatbot", description = "API Chatbot AI hỗ trợ khách hàng")
 public class ChatbotController {

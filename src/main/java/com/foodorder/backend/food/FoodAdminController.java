@@ -34,7 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequestMapping("/api/admin/foods")
-@CrossOrigin("*")
+
 @RequireAdmin
 @Tag(name = "Foods Admin", description = "API quản lý món ăn dành cho Admin - CRUD đầy đủ")
 public class FoodAdminController {

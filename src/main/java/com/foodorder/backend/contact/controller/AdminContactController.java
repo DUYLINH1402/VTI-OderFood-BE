@@ -31,7 +31,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/contacts")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @Slf4j
 @Tag(name = "Admin Contact", description = "API quản lý tin nhắn liên hệ (Admin/Staff)")
 @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")

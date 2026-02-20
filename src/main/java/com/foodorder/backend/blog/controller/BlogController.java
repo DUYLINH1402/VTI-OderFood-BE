@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RestController
 @RequestMapping("/api/blogs")
-@CrossOrigin("*")
+
 @RequiredArgsConstructor
 @Tag(name = "Blogs - Public", description = "API công khai cho bài viết/tin tức")
 public class BlogController {

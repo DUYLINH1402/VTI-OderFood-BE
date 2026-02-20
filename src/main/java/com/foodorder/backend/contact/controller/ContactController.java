@@ -24,7 +24,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/contact")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+
 @Slf4j
 @Tag(name = "Contact", description = "API gửi tin nhắn liên hệ")
 public class ContactController {

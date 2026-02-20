@@ -20,7 +20,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/categories")
-@CrossOrigin("*")
+
 @Tag(name = "Categories", description = "API quản lý danh mục món ăn")
 public class CategoryController {
 

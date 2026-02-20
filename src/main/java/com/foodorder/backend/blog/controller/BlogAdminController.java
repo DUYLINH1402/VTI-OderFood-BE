@@ -35,7 +35,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/admin/blogs")
-@CrossOrigin("*")
+
 @RequiredArgsConstructor
 @RequireAdmin
 @Tag(name = "Blogs - Admin", description = "API quản trị bài viết/tin tức")
