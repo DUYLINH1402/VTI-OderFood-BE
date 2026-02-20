@@ -31,7 +31,6 @@ public class AlgoliaConfig {
      */
     @Bean
     public SearchClient searchClient() {
-        log.info("Khởi tạo Algolia SearchClient với Application ID: {}", applicationId);
         return new SearchClient(applicationId, apiKey);
     }
 }

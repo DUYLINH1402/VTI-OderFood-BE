@@ -96,6 +96,11 @@ services:
       # OpenAI configuration
       OPENAI_API_KEY: ${OPENAI_API_KEY}
 
+      # Algolia Search configuration
+      ALGOLIA_APPLICATION_ID: ${ALGOLIA_APPLICATION_ID}
+      ALGOLIA_API_KEY: ${ALGOLIA_API_KEY}
+      ALGOLIA_INDEX_NAME: ${ALGOLIA_INDEX_NAME:-foods}
+
       # Frontend URL
       RESET_PASSWORD_URL: ${RESET_PASSWORD_URL}
 
@@ -107,6 +112,10 @@ services:
         # Facebook OAuth 2.0 configuration
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+
+      # Contact module configuration
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      STORE_NAME: ${STORE_NAME}
 
       # Redis configuration (cho cache)
       SPRING_DATA_REDIS_HOST: redis
