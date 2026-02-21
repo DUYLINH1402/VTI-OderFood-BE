@@ -99,7 +99,7 @@ services:
       # Algolia Search configuration
       ALGOLIA_APPLICATION_ID: ${ALGOLIA_APPLICATION_ID}
       ALGOLIA_API_KEY: ${ALGOLIA_API_KEY}
-      ALGOLIA_INDEX_NAME: ${ALGOLIA_INDEX_NAME:foods}
+      ALGOLIA_INDEX_NAME: ${ALGOLIA_INDEX_NAME:-foods}
 
       # Frontend URL
       RESET_PASSWORD_URL: ${RESET_PASSWORD_URL}
