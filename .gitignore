@@ -28,6 +28,7 @@ RenewSSL_By_AWC_EC2.txt
 *.md
 .env
 .DS_Store
+docker-compose.dev.yml
 
 ### NetBeans ###
 /nbproject/private/
