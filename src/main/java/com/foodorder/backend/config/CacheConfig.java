@@ -166,6 +166,12 @@ public class CacheConfig {
     public static final String ACTIVE_COUPONS_CACHE = "activeCoupons";
 
     // =============================================
+    // RESTAURANT CACHES
+    // =============================================
+    /** Cache thông tin nhà hàng - TTL: 30 phút (ít thay đổi) */
+    public static final String RESTAURANT_INFO_CACHE = "restaurantInfo";
+
+    // =============================================
     // TTL DURATIONS (Thời gian hết hạn cache)
     // =============================================
     /** TTL ngắn: 3 phút - Dữ liệu thay đổi thường xuyên (comments) */
@@ -294,6 +300,9 @@ public class CacheConfig {
 
         // COUPON PUBLIC CACHES
         cacheConfigurations.put(ACTIVE_COUPONS_CACHE, defaultConfig.entryTtl(TTL_DEFAULT));
+
+        // RESTAURANT CACHES
+        cacheConfigurations.put(RESTAURANT_INFO_CACHE, defaultConfig.entryTtl(TTL_VERY_LONG));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

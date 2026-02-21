@@ -165,6 +165,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/contact").permitAll() // Public: gửi tin nhắn liên hệ
                         .requestMatchers("/api/admin/contacts/**").hasAnyRole("STAFF", "ADMIN") // Admin/Staff: quản lý tin nhắn
 
+                        // RESTAURANT - Thông tin nhà hàng
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/restaurant").permitAll() // Public: xem thông tin nhà hàng
+                        .requestMatchers("/api/admin/restaurant/**").hasRole("ADMIN") // Admin: quản lý thông tin nhà hàng
+
                         // Các request khác cần authentication
                         .anyRequest().authenticated()
                 )

@@ -1,12 +1,15 @@
 HELP.md
 target/
 src/main/resources/application-local.yml
+.github/copilot-instructions.md
 Build.txt
 Lightsail.txt
 Log.txt
 NOTES.txt
 RenewSSL_By_AWC_EC2.txt
 docker-compose.dev.yml
+
+
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
